@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -22,9 +22,29 @@ export function run(command, args, options = {}) {
   });
 }
 
+/** Which package provides each command-line tool this repo runs. */
+const TOOL_PACKAGES = { tsc: 'typescript', vite: 'vite', playwright: '@playwright/test' };
+
+/**
+ * The JavaScript entry point of an installed tool, so it can be run with
+ * `process.execPath` and no shell. Spawning the `npx`/`tsc` shims directly is
+ * refused on Windows (they are .cmd files), and a shell would re-interpret
+ * arguments, so neither is used.
+ */
+export function binPath(tool) {
+  const pkg = TOOL_PACKAGES[tool];
+  if (!pkg) throw new Error(`No package registered for tool "${tool}"`);
+  const pkgDir = join(rootDir, 'node_modules', ...pkg.split('/'));
+  const manifest = JSON.parse(readFileSync(join(pkgDir, 'package.json'), 'utf8'));
+  const bin = typeof manifest.bin === 'string' ? manifest.bin : manifest.bin?.[tool];
+  if (!bin) throw new Error(`Package ${pkg} does not expose a "${tool}" binary`);
+  return join(pkgDir, ...bin.split('/'));
+}
+
+/** Run an installed tool (`tsc`, `vite`, `playwright`) through Node itself. */
 export function npx(args, options = {}) {
-  const command = process.platform === 'win32' ? 'npx.cmd' : 'npx';
-  return run(command, args, options);
+  const [tool, ...rest] = args;
+  return run(process.execPath, [binPath(tool), ...rest], options);
 }
 
 export function npm(args, options = {}) {
