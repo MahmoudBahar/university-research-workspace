@@ -73,7 +73,15 @@ describe('backup and restore', () => {
     assert.ok(report.restored.includes('vault'));
 
     const restored = await openWorkspace({ root });
-    t.after(() => restored.close());
+    // Close before the workspace cleanup registered above runs: after-hooks run
+    // in registration order, and Windows cannot remove an open database file.
+    t.after(() => {
+      try {
+        restored.close();
+      } catch {
+        /* already closed */
+      }
+    });
     assert.equal(restored.db.get<{ n: number }>('SELECT COUNT(*) AS n FROM relationships')?.n, relationshipsBefore);
     assert.equal(restored.db.get<{ n: number }>('SELECT COUNT(*) AS n FROM note_revisions')?.n, revisionsBefore);
     assert.equal(readFileSync(join(restored.paths.vault, 'people', personId, 'profile.md'), 'utf8'), profileText);
@@ -91,6 +99,7 @@ describe('backup and restore', () => {
     assert.equal(plan?.utc_instant, '2026-09-15T13:00:00Z', 'planned times keep their resolved instant');
     const sent = restored.db.get<{ was_approved: number }>('SELECT was_approved FROM sent_events WHERE outreach_id = ?', draftId);
     assert.equal(sent?.was_approved, 1);
+    restored.close();
   });
 
   test('restoring over an existing workspace requires force', async (t) => {

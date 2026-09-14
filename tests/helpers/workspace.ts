@@ -68,7 +68,8 @@ export async function makeWorkspace(options: { config?: Record<string, unknown> 
       } catch {
         /* already closed */
       }
-      rmSync(root, { recursive: true, force: true });
+      // Windows refuses to delete files another handle still holds; retry briefly.
+      rmSync(root, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
     },
   };
 }
