@@ -29,17 +29,21 @@ checks.push({
   ok: true,
   detail: 'plain text and Markdown built in; PDFs are read by Claude via /import-document (no system tool needed)',
 });
+const built = existsSync(join(rootDir, 'packages', 'cli', 'dist', 'index.js'));
 checks.push({
   name: 'Build output present',
-  ok: existsSync(join(rootDir, 'packages', 'cli', 'dist', 'index.js')),
-  detail: 'run npm run build if missing',
+  ok: true,
+  warn: !built,
+  detail: built ? 'packages/cli/dist/index.js' : 'not built yet; run npm run build',
 });
 
 for (const check of checks) {
-  process.stdout.write(`${check.ok ? 'ok  ' : 'FAIL'} ${check.name.padEnd(24)} ${check.detail}\n`);
+  const mark = !check.ok ? 'FAIL' : check.warn ? 'warn' : 'ok  ';
+  process.stdout.write(`${mark} ${check.name.padEnd(24)} ${check.detail}\n`);
 }
+// Only a genuinely unusable runtime fails the doctor; a fresh checkout is not an error.
 if (checks.some((check) => !check.ok)) process.exitCode = 1;
 
-if (existsSync(join(rootDir, 'data', 'research.sqlite'))) {
+if (built && existsSync(join(rootDir, 'data', 'research.sqlite'))) {
   await run(process.execPath, [join(rootDir, 'packages', 'cli', 'dist', 'index.js'), 'diagnose']);
 }

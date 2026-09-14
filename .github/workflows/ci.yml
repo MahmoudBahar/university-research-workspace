@@ -30,11 +30,11 @@ jobs:
       - name: Install
         run: npm ci
 
-      - name: Report the runtime and driver actually in use
-        run: npm run doctor
-
       - name: Build
         run: npm run build
+
+      - name: Report the runtime and driver actually in use
+        run: npm run doctor
 
       - name: Acceptance tests
         run: npm test
