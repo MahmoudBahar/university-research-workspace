@@ -104,10 +104,17 @@ either order; the queries now break ties on `rowid`.
 
 ## Platforms
 
-Only **Linux** was executed here. `.github/workflows/ci.yml` runs the same build,
-acceptance suite and link check on `ubuntu-latest`, `macos-latest` and
-`windows-latest` across Node 24 and 26, plus the browser flows on Linux. Until
-that workflow has run, macOS and Windows are **configured but unverified**.
+The workflow in `.github/workflows/ci.yml` has now run on GitHub Actions
+(run 34793231411 on `main`): the build, the 79-test acceptance suite and the
+seeded link check passed on **ubuntu-latest, macos-latest and windows-latest**,
+each on Node 24 and Node 26, and the 11 browser flows passed on Ubuntu. Three
+portability defects surfaced on the way and were fixed: the doctor treated a
+fresh checkout with no build as a failure; Node 24 does not accept a directory
+as a `--test` argument (files are now listed explicitly); and Windows refuses
+to spawn the `npx`/`tsc` `.cmd` shims without a shell, so the scripts now run
+each tool's JavaScript entry point through Node directly. One test also removed
+its temporary workspace before closing a restored database, which Windows
+refuses; the order is fixed and deletes retry briefly.
 
 Portability was designed for rather than assumed: no shell is invoked anywhere
 (`spawn` is always called with `shell: false`), paths are stored posix-style and
@@ -140,7 +147,7 @@ What changed since the first verification, and what each gate needs now.
 | --- | --- | --- |
 | Isolated subagent execution end to end | **Prepared, not run.** Every skill now names the Agent tool, the `subagent_type` and the exact prompt; `scripts/fixture-server.mjs` and `docs/dry-run.md` give a full run against fictional pages. The run itself was deferred by the user. | A `source-mapper` subagent launched from this session (the same agent definition the skills dispatch) reported that it inherits `Bash`, `Read` and `Write` directly and all 22 `mcp__claude-in-chrome__*` tools plus `WebFetch` and `WebSearch` as deferred tools loadable with one `ToolSearch` call, which is exactly what step 0 of the retrieval ladder tells workers to do. The Claude in Chrome extension was **not connected** during this session (`list_connected_browsers` returned an empty list; `tabs_context_mcp` answered "Browser extension is not connected"), so the read of a fixture page through the browser tools was not exercised. |
 | Live research quality | **Open by nature.** Only a real run shows it. | `docs/first-run.md` is the checklist for that run and for recording what it shows. |
-| macOS and Windows | **Configured, not run.** The workflow in `.github/workflows/ci.yml` covers both across Node 24 and 26; it runs on the first push. | Git repository initialised; push instructions in README. |
+| macOS and Windows | **Closed.** The workflow ran on all three platforms across Node 24 and 26 after the push; every job passed. | GitHub Actions run 34793231411; see Platforms above. |
 | PDF text extraction | **Closed by design.** There is no extractor; Claude reads the document through `/import-document` and the CLI records text and provenance (`method: claude_read`, page count, date). Pasted text is `manual_paste`. Both paths are tested through the ingress. | `10-safety`: a PDF and a PNG report `unavailable` with the `/import-document` hint; text handed in keeps `method: claude_read`, its page count and `review_state: unreviewed`, and embedded instructions are stored verbatim; an unreadable scan is recorded with its reason and no text. `12-api`: the extract endpoint's three body shapes. |
 | Long-running lease renewal | **Partly closed.** `leases.maxRenewals` is enforced and tested; multi-hour behaviour is still unobserved. | `13-maintenance`: renewals are counted per run and the request past the cap fails with `state_violation`. |
 | Browser retrieval | **Not run.** The ladder is tested at the schema, database and API boundary (`needs_browser`, `fetch_method`, `sources needs-browser`) and the fixture server offers a JavaScript-shell page for it, but no page was read through the browser tools because the extension was not connected, and no real host was contacted. | Tool inheritance confirmed by the probe above. To close: connect the extension, then follow `docs/dry-run.md` and check that `/scholar/citations?user=aosei` is recorded with `fetch_method: browser`. |
