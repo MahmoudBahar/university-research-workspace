@@ -1,6 +1,7 @@
 import { useMemo, useState, type CSSProperties, type ReactNode } from 'react';
 import { ArrowDown, ArrowUp, ArrowUpDown, type LucideIcon } from 'lucide-react';
 import { renderMarkdown } from '../lib/markdown';
+import { useCountUp } from '../lib/useCountUp';
 import { AppLink } from './AppLink';
 import { PanelSkeleton, TableSkeleton } from './Skeleton';
 
@@ -128,7 +129,7 @@ export function Stat({
     <>
       {Icon ? <Icon className="stat-icon" aria-hidden="true" /> : null}
       <div className="value" style={tone ? { color: `var(--${tone})` } : undefined}>
-        {value}
+        {typeof value === 'number' ? <AnimatedNumber value={value} /> : value}
       </div>
       <div className="label">{label}</div>
       {hint ? <div className="hint">{hint}</div> : null}
@@ -141,6 +142,12 @@ export function Stat({
   ) : (
     <div className="stat">{inner}</div>
   );
+}
+
+/** A number that counts up to its value when it appears or changes. */
+export function AnimatedNumber({ value }: { value: number }) {
+  const shown = useCountUp(value);
+  return <span data-counting={shown !== value ? 'true' : undefined}>{shown}</span>;
 }
 
 export interface Column<T> {

@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
+import { useLocation } from 'react-router-dom';
 import {
   BookOpen,
   ChevronDown,
@@ -89,7 +90,25 @@ const FOCUSABLE = 'a[href], button:not([disabled]), input, select, textarea, [ta
 export function Sidebar({ boot, open, onClose, returnFocusTo }: { boot: Bootstrap | undefined; open: boolean; onClose: () => void; returnFocusTo?: () => void }) {
   const [collapsed, setCollapsed] = useState<Set<string>>(readCollapsed);
   const aside = useRef<HTMLElement>(null);
+  const nav = useRef<HTMLElement>(null);
   const status = boot?.status;
+  const location = useLocation();
+  const [settled, setSettled] = useState(0);
+  const [indicator, setIndicator] = useState<{ y: number; h: number } | null>(null);
+
+  // The active-link indicator slides to whichever link is current.
+  useLayoutEffect(() => {
+    const element = nav.current;
+    if (!element) return;
+    const active = element.querySelector<HTMLElement>('a[aria-current="page"]');
+    if (!active || active.closest('.nav-group-body[data-open="false"]')) {
+      setIndicator(null);
+      return;
+    }
+    const navRect = element.getBoundingClientRect();
+    const rect = active.getBoundingClientRect();
+    setIndicator({ y: rect.top - navRect.top, h: rect.height });
+  }, [location.pathname, collapsed, open, settled, status]);
 
   const toggleGroup = (id: string) => {
     setCollapsed((previous) => {
@@ -153,7 +172,10 @@ export function Sidebar({ boot, open, onClose, returnFocusTo }: { boot: Bootstra
           </div>
           <IconButton className="drawer-close" label="Close navigation" icon={X} onClick={onClose} size="small" />
         </div>
-        <nav aria-label="Sections">
+        <nav aria-label="Sections" ref={nav}>
+          {indicator ? (
+            <span className="nav-indicator" aria-hidden="true" style={{ '--y': `${indicator.y}px`, '--h': `${indicator.h}px` } as CSSProperties} />
+          ) : null}
           {NAV_GROUPS.map((group) => {
             const isCollapsed = collapsed.has(group.id);
             const listId = `nav-group-${group.id}`;
@@ -163,7 +185,8 @@ export function Sidebar({ boot, open, onClose, returnFocusTo }: { boot: Bootstra
                   <ChevronDown className="chevron" aria-hidden="true" />
                   {group.label}
                 </button>
-                <ul id={listId} hidden={isCollapsed}>
+                <div className="nav-group-body" data-open={isCollapsed ? 'false' : 'true'} onTransitionEnd={() => setSettled((n) => n + 1)}>
+                  <ul id={listId} inert={isCollapsed}>
                   {group.items.map((item) => {
                     const badge = status && item.badge ? item.badge(status) : null;
                     return (
@@ -176,7 +199,8 @@ export function Sidebar({ boot, open, onClose, returnFocusTo }: { boot: Bootstra
                       </li>
                     );
                   })}
-                </ul>
+                  </ul>
+                </div>
               </div>
             );
           })}

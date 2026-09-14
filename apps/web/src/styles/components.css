@@ -150,11 +150,16 @@ button.icon.small svg { width: 14px; height: 14px; }
 }
 .toast {
   pointer-events: auto;
+  position: relative; overflow: hidden;
   display: flex; align-items: flex-start; gap: var(--space-2);
   padding: 0.7rem 0.8rem; border-radius: var(--radius-md);
   background: var(--panel-raised); border: 1px solid var(--line); box-shadow: var(--shadow-3);
   font-size: var(--text-sm); color: var(--ink);
   border-left-width: 4px;
+}
+.toast::after {
+  content: ""; position: absolute; left: 0; bottom: 0; height: 3px; width: 100%;
+  background: currentColor; opacity: 0.25; transform-origin: left center;
 }
 .toast[data-kind="ok"] { border-left-color: var(--ok); }
 .toast[data-kind="warn"] { border-left-color: var(--warn); }
@@ -241,7 +246,12 @@ dialog.dialog .dialog-body { padding: var(--space-4); overflow: auto; max-height
 .activity .activity-when { color: var(--muted); font-size: var(--text-xs); white-space: nowrap; }
 
 /* Tabs */
-[role="tablist"] button[role="tab"] { border-color: transparent; background: transparent; box-shadow: none; color: var(--muted); }
+[role="tablist"] button[role="tab"] { border-color: transparent; background: transparent; box-shadow: none; color: var(--muted); position: relative; }
+[role="tablist"] button[role="tab"]::after {
+  content: ""; position: absolute; left: 10px; right: 10px; bottom: 1px; height: 2px; border-radius: 2px;
+  background: var(--accent); transform: scaleX(0); transform-origin: left center;
+}
+[role="tablist"] button[role="tab"][aria-selected="true"]::after { transform: scaleX(1); }
 [role="tablist"] button[role="tab"]:hover:not(:disabled) { background: var(--bg-subtle); color: var(--ink); }
 [role="tablist"] button[role="tab"][aria-selected="true"] { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
 

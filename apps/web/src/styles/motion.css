@@ -1,54 +1,190 @@
 /*
  * Everything that moves lives here, and only for people who have not asked
  * for reduced motion. With `prefers-reduced-motion: reduce`, nothing animates.
+ *
+ * Layers, in the order a page is experienced:
+ *   1. Route change — the content area fades and slides; the shell stays put.
+ *   2. Entrance — headers, stats, panels, rows and list items rise in, staggered
+ *      by their position (`--i`, set below from :nth-child).
+ *   3. Interaction — buttons lift and press, links nudge, rows highlight, tabs
+ *      underline, the sidebar indicator glides to the current page.
+ *   4. Feedback — toasts spring in with a timer bar, dialogs pop, skeletons
+ *      shimmer, progress bars grow, numbers count up.
+ *   5. Theme — a circle of the new colours grows from the control pressed.
  */
+
+/* Sibling indices for staggered entrances. */
+  :is(.main, .grid, .split, .stack, .cols-2, .cols-3, .cols-4) > :nth-child(1), tbody > :nth-child(1), .activity > :nth-child(1), .palette .palette-list > :nth-child(1), .tree ul > :nth-child(1), .sidebar nav ul > :nth-child(1), .meta-list > :nth-child(1), .notice ul > :nth-child(1), .button-row > :nth-child(1), .empty-state > :nth-child(1), .dialog-body > :nth-child(1) { --i: 0; }
+  :is(.main, .grid, .split, .stack, .cols-2, .cols-3, .cols-4) > :nth-child(2), tbody > :nth-child(2), .activity > :nth-child(2), .palette .palette-list > :nth-child(2), .tree ul > :nth-child(2), .sidebar nav ul > :nth-child(2), .meta-list > :nth-child(2), .notice ul > :nth-child(2), .button-row > :nth-child(2), .empty-state > :nth-child(2), .dialog-body > :nth-child(2) { --i: 1; }
+  :is(.main, .grid, .split, .stack, .cols-2, .cols-3, .cols-4) > :nth-child(3), tbody > :nth-child(3), .activity > :nth-child(3), .palette .palette-list > :nth-child(3), .tree ul > :nth-child(3), .sidebar nav ul > :nth-child(3), .meta-list > :nth-child(3), .notice ul > :nth-child(3), .button-row > :nth-child(3), .empty-state > :nth-child(3), .dialog-body > :nth-child(3) { --i: 2; }
+  :is(.main, .grid, .split, .stack, .cols-2, .cols-3, .cols-4) > :nth-child(4), tbody > :nth-child(4), .activity > :nth-child(4), .palette .palette-list > :nth-child(4), .tree ul > :nth-child(4), .sidebar nav ul > :nth-child(4), .meta-list > :nth-child(4), .notice ul > :nth-child(4), .button-row > :nth-child(4), .empty-state > :nth-child(4), .dialog-body > :nth-child(4) { --i: 3; }
+  :is(.main, .grid, .split, .stack, .cols-2, .cols-3, .cols-4) > :nth-child(5), tbody > :nth-child(5), .activity > :nth-child(5), .palette .palette-list > :nth-child(5), .tree ul > :nth-child(5), .sidebar nav ul > :nth-child(5), .meta-list > :nth-child(5), .notice ul > :nth-child(5), .button-row > :nth-child(5), .empty-state > :nth-child(5), .dialog-body > :nth-child(5) { --i: 4; }
+  :is(.main, .grid, .split, .stack, .cols-2, .cols-3, .cols-4) > :nth-child(6), tbody > :nth-child(6), .activity > :nth-child(6), .palette .palette-list > :nth-child(6), .tree ul > :nth-child(6), .sidebar nav ul > :nth-child(6), .meta-list > :nth-child(6), .notice ul > :nth-child(6), .button-row > :nth-child(6), .empty-state > :nth-child(6), .dialog-body > :nth-child(6) { --i: 5; }
+  :is(.main, .grid, .split, .stack, .cols-2, .cols-3, .cols-4) > :nth-child(7), tbody > :nth-child(7), .activity > :nth-child(7), .palette .palette-list > :nth-child(7), .tree ul > :nth-child(7), .sidebar nav ul > :nth-child(7), .meta-list > :nth-child(7), .notice ul > :nth-child(7), .button-row > :nth-child(7), .empty-state > :nth-child(7), .dialog-body > :nth-child(7) { --i: 6; }
+  :is(.main, .grid, .split, .stack, .cols-2, .cols-3, .cols-4) > :nth-child(8), tbody > :nth-child(8), .activity > :nth-child(8), .palette .palette-list > :nth-child(8), .tree ul > :nth-child(8), .sidebar nav ul > :nth-child(8), .meta-list > :nth-child(8), .notice ul > :nth-child(8), .button-row > :nth-child(8), .empty-state > :nth-child(8), .dialog-body > :nth-child(8) { --i: 7; }
+  :is(.main, .grid, .split, .stack, .cols-2, .cols-3, .cols-4) > :nth-child(9), tbody > :nth-child(9), .activity > :nth-child(9), .palette .palette-list > :nth-child(9), .tree ul > :nth-child(9), .sidebar nav ul > :nth-child(9), .meta-list > :nth-child(9), .notice ul > :nth-child(9), .button-row > :nth-child(9), .empty-state > :nth-child(9), .dialog-body > :nth-child(9) { --i: 8; }
+  :is(.main, .grid, .split, .stack, .cols-2, .cols-3, .cols-4) > :nth-child(10), tbody > :nth-child(10), .activity > :nth-child(10), .palette .palette-list > :nth-child(10), .tree ul > :nth-child(10), .sidebar nav ul > :nth-child(10), .meta-list > :nth-child(10), .notice ul > :nth-child(10), .button-row > :nth-child(10), .empty-state > :nth-child(10), .dialog-body > :nth-child(10) { --i: 9; }
+  :is(.main, .grid, .split, .stack, .cols-2, .cols-3, .cols-4) > :nth-child(11), tbody > :nth-child(11), .activity > :nth-child(11), .palette .palette-list > :nth-child(11), .tree ul > :nth-child(11), .sidebar nav ul > :nth-child(11), .meta-list > :nth-child(11), .notice ul > :nth-child(11), .button-row > :nth-child(11), .empty-state > :nth-child(11), .dialog-body > :nth-child(11) { --i: 10; }
+  :is(.main, .grid, .split, .stack, .cols-2, .cols-3, .cols-4) > :nth-child(12), tbody > :nth-child(12), .activity > :nth-child(12), .palette .palette-list > :nth-child(12), .tree ul > :nth-child(12), .sidebar nav ul > :nth-child(12), .meta-list > :nth-child(12), .notice ul > :nth-child(12), .button-row > :nth-child(12), .empty-state > :nth-child(12), .dialog-body > :nth-child(12) { --i: 11; }
+  :is(.main, .grid, .split, .stack, .cols-2, .cols-3, .cols-4) > :nth-child(13), tbody > :nth-child(13), .activity > :nth-child(13), .palette .palette-list > :nth-child(13), .tree ul > :nth-child(13), .sidebar nav ul > :nth-child(13), .meta-list > :nth-child(13), .notice ul > :nth-child(13), .button-row > :nth-child(13), .empty-state > :nth-child(13), .dialog-body > :nth-child(13) { --i: 12; }
+  :is(.main, .grid, .split, .stack, .cols-2, .cols-3, .cols-4) > :nth-child(14), tbody > :nth-child(14), .activity > :nth-child(14), .palette .palette-list > :nth-child(14), .tree ul > :nth-child(14), .sidebar nav ul > :nth-child(14), .meta-list > :nth-child(14), .notice ul > :nth-child(14), .button-row > :nth-child(14), .empty-state > :nth-child(14), .dialog-body > :nth-child(14) { --i: 13; }
+
 @media (prefers-reduced-motion: no-preference) {
-  a, button, .button, input, select, textarea, .pill, .panel, .stat, .tree .node, .sidebar nav a, .chip {
+  /* ---------- Base transitions ---------- */
+  a, button, .button, input, select, textarea, .pill, .panel, .stat, .tree .node, .sidebar nav a, .chip,
+  [role="tab"], .tree .tree-toggle, .search-button, .palette [role="option"], .nav-group-header {
     transition:
       background-color var(--dur-fast) var(--ease),
       border-color var(--dur-fast) var(--ease),
       color var(--dur-fast) var(--ease),
       box-shadow var(--dur) var(--ease),
-      transform var(--dur-fast) var(--ease),
+      transform var(--dur) var(--ease),
       opacity var(--dur) var(--ease);
   }
-  .panel:hover, .stat:hover { box-shadow: var(--shadow-2); }
+  input:focus-visible, select:focus-visible, textarea:focus-visible { transition-duration: var(--dur-fast); }
+
+  /* ---------- Buttons ---------- */
+  button:hover:not(:disabled), .button:hover { transform: translateY(-1px); box-shadow: var(--shadow-2); }
+  button:active:not(:disabled), .button:active { transform: translateY(0) scale(0.96); box-shadow: none; transition-duration: 70ms; }
+  button.primary:hover:not(:disabled), .button.primary:hover { box-shadow: 0 8px 20px -8px color-mix(in srgb, var(--accent) 75%, transparent); }
+  button.ghost:hover:not(:disabled), .segmented button:hover:not(:disabled), .decision-group button:hover:not(:disabled),
+  [role="tab"]:hover:not(:disabled), button.icon:hover:not(:disabled), .tree .tree-toggle:hover { transform: none; box-shadow: none; }
+  button svg, .button svg { transition: transform var(--dur) var(--ease); }
+  button:hover:not(:disabled) > svg:first-child { transform: scale(1.12); }
+  button.icon:active:not(:disabled) { transform: scale(0.9); }
+
+  /* ---------- Page header ---------- */
+  .main > header .breadcrumbs { animation: slide-right var(--dur-slow) var(--ease) both; }
+  .main > header h2 { animation: slide-right 420ms var(--ease) both; }
+  .main > header .lede { animation: fade-up 420ms var(--ease) 90ms both; }
+  .main > header .button-row { animation: fade-up 420ms var(--ease) 140ms both; }
+
+  /* ---------- Panels and stats ---------- */
+  .panel { animation: rise-in 460ms var(--ease) both; animation-delay: calc(var(--i, 0) * 70ms); }
+  .panel:hover { box-shadow: var(--shadow-2); border-color: var(--line-strong); }
+  .stat { animation: pop-up 520ms cubic-bezier(0.2, 0.9, 0.3, 1.1) both; animation-delay: calc(var(--i, 0) * 80ms); }
+  .stat:hover { transform: translateY(-3px); box-shadow: var(--shadow-3); border-color: var(--line-strong); }
+  .stat svg.stat-icon { transition: transform var(--dur-slow) cubic-bezier(0.2, 0.9, 0.3, 1.2), opacity var(--dur) var(--ease), color var(--dur) var(--ease); }
+  .stat:hover svg.stat-icon { transform: rotate(-10deg) scale(1.25); opacity: 1; color: var(--accent); }
+  .stat .value { transition: color var(--dur) var(--ease); }
+  .stat .value [data-counting="true"] { font-variant-numeric: tabular-nums; }
+
+  /* ---------- Sidebar ---------- */
   .sidebar { transition: transform var(--dur-slow) var(--ease), box-shadow var(--dur-slow) var(--ease); }
-  .drawer-backdrop { transition: opacity var(--dur-slow) var(--ease); }
+  .sidebar nav a:hover { transform: translateX(3px); }
+  .sidebar nav a svg { transition: transform var(--dur) cubic-bezier(0.2, 0.9, 0.3, 1.2), color var(--dur-fast) var(--ease); }
+  .sidebar nav a:hover svg { transform: scale(1.18) rotate(-4deg); }
+  .sidebar nav a[aria-current="page"] svg { transform: scale(1.08); }
+  .sidebar nav a .pill { animation: pop-in 480ms cubic-bezier(0.2, 0.9, 0.3, 1.3) both; }
+  .sidebar .nav-indicator { transition: transform 380ms cubic-bezier(0.3, 0.9, 0.3, 1.08), height var(--dur) var(--ease); }
   .sidebar .nav-group-header svg.chevron { transition: transform var(--dur) var(--ease); }
-  .tree .tree-toggle svg { transition: transform var(--dur) var(--ease); }
+  .sidebar .nav-group-body { transition: grid-template-rows var(--dur-slow) var(--ease); }
+  .sidebar .nav-group-body > ul { transition: opacity var(--dur) var(--ease); }
+  .drawer-backdrop { transition: opacity var(--dur-slow) var(--ease); }
+  .sidebar .brand-mark { transition: transform var(--dur-slow) cubic-bezier(0.2, 0.9, 0.3, 1.3), box-shadow var(--dur); }
+  .sidebar .brand-block:hover .brand-mark { transform: rotate(-8deg) scale(1.08); box-shadow: var(--shadow-2); }
+
+  /* ---------- Top bar ---------- */
+  .topbar .search-button:hover { transform: translateY(-1px); box-shadow: var(--shadow-1); }
+  .topbar .kbd { transition: transform var(--dur-fast) var(--ease), color var(--dur-fast); }
+  .topbar .search-button:hover .kbd { transform: translateY(-1px); color: var(--ink); }
+  .theme-toggle button svg { transition: transform var(--dur-slow) cubic-bezier(0.2, 0.9, 0.3, 1.2); }
+  .theme-toggle button[aria-pressed="true"] svg { animation: icon-spin-in 520ms cubic-bezier(0.2, 0.9, 0.3, 1.2) both; }
+  .theme-toggle button:hover:not([aria-pressed="true"]) svg { transform: rotate(18deg) scale(1.15); }
+
+  /* ---------- Tabs, chips ---------- */
+  [role="tab"]::after { transition: transform var(--dur-slow) cubic-bezier(0.2, 0.9, 0.3, 1.1); }
+  .chip { animation: pop-in var(--dur-slow) var(--ease) both; }
+
+  /* ---------- Tables ---------- */
+  tbody tr { animation: fade-up 380ms var(--ease) both; animation-delay: calc(min(var(--i, 0), 14) * 26ms); transition: background-color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease); }
+  tbody tr:hover { box-shadow: inset 3px 0 0 var(--accent); }
+  th .th-sort svg { transition: transform var(--dur) var(--ease), color var(--dur-fast); }
+  th .th-sort:hover svg { transform: translateY(-1px) scale(1.15); }
+
+  /* ---------- Pills, progress ---------- */
+  .pill { animation: pop-in 380ms cubic-bezier(0.2, 0.9, 0.3, 1.2) both; }
+  .progress .fill { transition: width 700ms var(--ease), background-color var(--dur); animation: grow-x 900ms var(--ease) both; transform-origin: left center; }
+
+  /* ---------- Tree ---------- */
+  .tree .tree-toggle svg { transition: transform var(--dur) cubic-bezier(0.2, 0.9, 0.3, 1.2); }
   .tree .tree-children { transition: grid-template-rows var(--dur-slow) var(--ease); }
   .tree .tree-children > div { transition: visibility var(--dur-slow); }
-  .progress .fill { transition: width var(--dur-slow) var(--ease); }
+  .tree .tree-children[data-open="true"] > div > ul > li { animation: slide-right 360ms var(--ease) both; animation-delay: calc(var(--i, 0) * 45ms); }
+  .tree .node:hover { transform: translateX(3px); }
+  .tree .node[data-highlight="true"] { animation: highlight-pulse 1.6s var(--ease) 1; }
+
+  /* ---------- Lists ---------- */
+  .activity li, .palette [role="option"], .meta-list > div, .notice ul li, .empty-state > * {
+    animation: fade-up 380ms var(--ease) both; animation-delay: calc(min(var(--i, 0), 16) * 35ms);
+  }
+  .activity li:hover { background: var(--bg-subtle); }
+  .activity li svg { transition: transform var(--dur) cubic-bezier(0.2, 0.9, 0.3, 1.2), color var(--dur-fast); }
+  .activity li:hover svg { transform: scale(1.2); color: var(--accent); }
+  .palette [role="option"][aria-selected="true"] { transform: translateX(4px); }
+  .palette [role="option"] svg { transition: transform var(--dur) var(--ease); }
+  .palette [role="option"][aria-selected="true"] svg { transform: scale(1.15); }
+
+  /* ---------- Feedback ---------- */
   .skeleton { animation: shimmer 1.4s linear infinite; }
   .loading-bar { animation: shimmer 1.2s linear infinite; }
-
-  .main > header { animation: fade-up var(--dur-slow) var(--ease) both; }
-  .panel, .stat { animation: fade-up var(--dur-slow) var(--ease) both; }
-  tbody tr { animation: fade-in var(--dur) var(--ease) both; animation-delay: calc(min(var(--i, 0), 12) * 22ms); }
-  .toast { animation: toast-in var(--dur-slow) var(--ease) both; }
+  .toast { animation: toast-in 460ms cubic-bezier(0.2, 0.9, 0.3, 1.15) both; }
   .toast[data-leaving="true"] { animation: toast-out var(--dur) var(--ease) both; }
-  dialog.dialog[open] { animation: dialog-in var(--dur) var(--ease) both; }
+  .toast::after { animation: toast-timer var(--toast-duration, 5s) linear both; }
+  .toast:hover::after, .toast:focus-within::after { animation-play-state: paused; }
+  .toast svg.toast-icon { animation: pop-in 520ms cubic-bezier(0.2, 0.9, 0.3, 1.4) 80ms both; }
+  dialog.dialog[open] { animation: dialog-in 280ms cubic-bezier(0.2, 0.9, 0.3, 1.1) both; }
   dialog.dialog[open]::backdrop { animation: fade-in var(--dur) var(--ease) both; }
-  .notice { animation: fade-up var(--dur) var(--ease) both; }
+  .notice { animation: notice-in 420ms cubic-bezier(0.2, 0.9, 0.3, 1.1) both; }
+  .empty-state svg.empty-icon { animation: float 3.4s ease-in-out infinite; }
+  .breadcrumbs a { transition: color var(--dur-fast) var(--ease); }
+  .markdown a, .breadcrumbs a, td a { background-image: linear-gradient(currentColor, currentColor); background-size: 0% 1px; background-repeat: no-repeat; background-position: 0 100%; transition: background-size var(--dur) var(--ease), color var(--dur-fast); }
+  .markdown a:hover, .breadcrumbs a:hover, td a:hover { background-size: 100% 1px; }
 
-  ::view-transition-old(root) { animation: vt-out var(--dur-fast) var(--ease-in-out) both; }
-  ::view-transition-new(root) { animation: vt-in var(--dur-slow) var(--ease) both; }
+  /* ---------- Route transitions ---------- */
+  ::view-transition-old(root) { animation: vt-out 140ms var(--ease-in-out) both; }
+  ::view-transition-new(root) { animation: vt-in 380ms var(--ease) both; }
   ::view-transition-group(sidebar), ::view-transition-group(topbar) { animation: none; }
+
+  /* ---------- Theme switch: a circle of the new theme grows from the control ---------- */
+  :root[data-theme-switching] .sidebar, :root[data-theme-switching] .topbar { view-transition-name: none; }
+  :root[data-theme-switching]::view-transition-old(root),
+  :root[data-theme-switching]::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
+  :root[data-theme-switching]::view-transition-old(root) { z-index: 1; }
+  :root[data-theme-switching]::view-transition-new(root) { z-index: 2; animation: theme-reveal 680ms cubic-bezier(0.4, 0, 0.2, 1) both; }
+  :root[data-theme-switching="fallback"], :root[data-theme-switching="fallback"] *,
+  :root[data-theme-switching="fallback"] *::before, :root[data-theme-switching="fallback"] *::after {
+    transition: background-color 440ms var(--ease), color 440ms var(--ease), border-color 440ms var(--ease), box-shadow 440ms var(--ease), fill 440ms var(--ease), stroke 440ms var(--ease) !important;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
+  .toast::after { display: none; }
 }
 
 .sidebar { view-transition-name: sidebar; }
 .topbar { view-transition-name: topbar; }
 
-@keyframes fade-up { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes fade-up { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes rise-in { from { opacity: 0; transform: translateY(14px) scale(0.985); } to { opacity: 1; transform: none; } }
+@keyframes pop-up { from { opacity: 0; transform: translateY(12px) scale(0.94); } to { opacity: 1; transform: none; } }
+@keyframes pop-in { from { opacity: 0; transform: scale(0.6); } to { opacity: 1; transform: scale(1); } }
+@keyframes slide-right { from { opacity: 0; transform: translateX(-12px); } to { opacity: 1; transform: none; } }
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes grow-x { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 @keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
-@keyframes toast-in { from { opacity: 0; transform: translateY(12px) scale(0.98); } to { opacity: 1; transform: none; } }
-@keyframes toast-out { from { opacity: 1; } to { opacity: 0; transform: translateY(8px); } }
-@keyframes dialog-in { from { opacity: 0; transform: translateY(-8px) scale(0.985); } to { opacity: 1; transform: none; } }
+@keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+@keyframes highlight-pulse { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 45%, transparent); } 100% { box-shadow: 0 0 0 14px transparent; } }
+@keyframes icon-spin-in { from { transform: rotate(-120deg) scale(0.5); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes toast-in { from { opacity: 0; transform: translateY(18px) scale(0.95); } to { opacity: 1; transform: none; } }
+@keyframes toast-out { from { opacity: 1; } to { opacity: 0; transform: translateX(24px); } }
+@keyframes toast-timer { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+@keyframes notice-in { from { opacity: 0; transform: translateY(-6px) scale(0.99); } to { opacity: 1; transform: none; } }
+@keyframes dialog-in { from { opacity: 0; transform: translateY(-14px) scale(0.97); } to { opacity: 1; transform: none; } }
 @keyframes vt-out { from { opacity: 1; } to { opacity: 0; } }
-@keyframes vt-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes vt-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+@keyframes theme-reveal {
+  from { clip-path: circle(0px at var(--vt-x, 100%) var(--vt-y, 0%)); }
+  to { clip-path: circle(var(--vt-r, 150vmax) at var(--vt-x, 100%) var(--vt-y, 0%)); }
+}

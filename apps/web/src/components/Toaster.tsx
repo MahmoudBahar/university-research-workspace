@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react';
 import { AlertTriangle, CheckCircle2, Info, X, XCircle } from 'lucide-react';
 import { useToastQueue, type ToastRecord } from '../lib/toast';
 import { IconButton } from './IconButton';
@@ -45,6 +46,7 @@ function ToastView({
       className="toast"
       data-kind={toast.kind}
       data-leaving={toast.leaving ? 'true' : undefined}
+      style={{ '--toast-duration': `${toast.duration}ms` } as CSSProperties}
       onMouseEnter={() => onPause(toast.id)}
       onMouseLeave={() => onResume(toast.id)}
       onFocus={() => onPause(toast.id)}
