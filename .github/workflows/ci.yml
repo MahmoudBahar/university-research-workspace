@@ -1,0 +1,66 @@
+name: CI
+
+# Runs the same checks on the three supported platforms. A green run here is the
+# evidence that the workspace builds and passes on Windows and macOS; running
+# this file locally on one machine is not.
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  verify:
+    name: ${{ matrix.os }} · Node ${{ matrix.node }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        node: ['24', '26']
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Report the runtime and driver actually in use
+        run: npm run doctor
+
+      - name: Build
+        run: npm run build
+
+      - name: Acceptance tests
+        run: npm test
+
+      - name: Check vault links on a seeded workspace
+        run: |
+          node scripts/demo.mjs ci-demo-workspace
+          npm run research -- verify-links --root ci-demo-workspace --json
+        shell: bash
+
+  browser:
+    name: Browser flows (ubuntu-latest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-trace
+          path: test-results/
+          retention-days: 7

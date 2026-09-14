@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "degreeScope": {
+    "primary": ["MASc"],
+    "related": ["MSc", "MEng", "MRes"],
+    "allowRelated": false
+  },
+  "concurrency": {
+    "candidates": 1,
+    "totalWorkers": 4
+  },
+  "research": {
+    "publicationInventory": "all_in_scope",
+    "paperSummaryMode": "all_accessible",
+    "publicationYearsFrom": null,
+    "publicationTopics": [],
+    "publicationCountBudget": null,
+    "expansionBudgetPerRun": 5,
+    "requireVerifier": true
+  },
+  "retry": {
+    "maxAttempts": 3,
+    "baseDelayMs": 2000,
+    "maxDelayMs": 900000,
+    "jitterRatio": 0.25
+  },
+  "freshness": {
+    "contactDays": 30,
+    "programFactsDays": 60,
+    "profileDays": 120,
+    "publicationDays": 3650,
+    "sourceObservationDays": 14
+  },
+  "leases": {
+    "defaultSeconds": 1800,
+    "maxRenewals": 48
+  },
+  "timing": {
+    "displayZone": "auto",
+    "suggestStartHour": 9,
+    "suggestEndHour": 11,
+    "weekdaysOnly": true
+  },
+  "server": {
+    "port": 5178,
+    "host": "127.0.0.1"
+  },
+  "workers": {
+    "model": "inherit"
+  },
+  "fetching": {
+    "browserAllowed": true,
+    "browserHosts": ["scholar.google.com", "www.semanticscholar.org", "www.researchgate.net"],
+    "perHostDelayMs": 2000,
+    "maxBrowserPagesPerRun": 40
+  },
+  "events": {
+    "retentionDays": 30
+  }
+}

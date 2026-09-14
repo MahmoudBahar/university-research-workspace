@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="referrer" content="no-referrer" />
+    <title>University Research Workspace</title>
+    <!--
+      Apply the stored theme before the first paint so a dark preference never
+      flashes light. The app sets no Content-Security-Policy today; if one is
+      added later this inline script needs a nonce.
+    -->
+    <script>
+      (function () {
+        try {
+          var value = localStorage.getItem('urw.theme');
+          if (value === 'light' || value === 'dark') document.documentElement.setAttribute('data-theme', value);
+        } catch (error) {
+          /* storage may be unavailable; the system preference applies */
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <noscript>This local interface needs JavaScript. The CLI works without it: npm run research -- status</noscript>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

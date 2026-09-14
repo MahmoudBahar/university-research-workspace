@@ -1,0 +1,34 @@
+{
+  "name": "university-research-workspace",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Local university research workspace: seven research jobs, Markdown vault, SQLite workflow state, React review interface, manual email sending.",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "workspaces": [
+    "packages/db",
+    "packages/core",
+    "packages/cli",
+    "apps/server",
+    "apps/web"
+  ],
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "build:ts": "tsc -b tsconfig.build.json",
+    "typecheck": "tsc -b tsconfig.build.json",
+    "dev": "node scripts/dev.mjs",
+    "start": "node scripts/start.mjs",
+    "test": "node scripts/test.mjs",
+    "test:e2e": "node scripts/test-e2e.mjs",
+    "research": "node scripts/research.mjs",
+    "clean": "node scripts/clean.mjs",
+    "doctor": "node scripts/doctor.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "26.5.1",
+    "typescript": "5.9.3",
+    "@playwright/test": "1.63.0"
+  }
+}

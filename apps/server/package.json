@@ -1,0 +1,32 @@
+{
+  "name": "@urw/server",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/main.js",
+  "scripts": {
+    "build": "tsc -b"
+  },
+  "dependencies": {
+    "@urw/core": "1.0.0",
+    "express": "5.2.1",
+    "zod": "4.6.1"
+  },
+  "devDependencies": {
+    "@types/express": "5.0.6"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/main.d.ts",
+      "default": "./dist/main.js"
+    },
+    "./app": {
+      "types": "./dist/app.d.ts",
+      "default": "./dist/app.js"
+    },
+    "./security": {
+      "types": "./dist/security.d.ts",
+      "default": "./dist/security.js"
+    }
+  }
+}

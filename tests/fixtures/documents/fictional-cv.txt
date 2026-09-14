@@ -1,0 +1,16 @@
+CURRICULUM VITAE (fictional test document)
+
+Name: A. Fictional Applicant
+Email: applicant@example.invalid
+
+EDUCATION
+2021-2025  BSc in Electrical Engineering, Fictional State University
+           Final-year project: adaptive filtering for noisy sensor arrays
+
+SKILLS
+  Signal processing, numerical simulation, technical writing
+
+LANGUAGE TESTS
+  IELTS Academic, taken 2026-03-14: overall 7.5 (L 8.0, R 7.5, W 7.0, S 7.0)
+
+This file exists only to exercise document import and text extraction.

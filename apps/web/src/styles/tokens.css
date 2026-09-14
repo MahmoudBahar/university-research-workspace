@@ -1,0 +1,182 @@
+/*
+ * Design tokens.
+ *
+ * Light values live on :root. Dark values are declared twice, deliberately:
+ * once for an explicit choice (data-theme="dark") and once for the system
+ * preference when no explicit light choice was made. Keep the two blocks
+ * identical.
+ */
+:root {
+  /* Palette — warm neutrals and an indigo accent. */
+  --stone-0: #fdfcfb;
+  --stone-50: #f8f6f3;
+  --stone-100: #f1eee9;
+  --stone-200: #e5e1da;
+  --stone-300: #d2ccc3;
+  --stone-400: #a9a196;
+  --stone-500: #7d766c;
+  --stone-600: #5f5950;
+  --stone-700: #4a453e;
+  --stone-800: #2b2823;
+  --stone-900: #1d1b18;
+  --stone-950: #141311;
+  --indigo-100: #e0e3ff;
+  --indigo-200: #c7cbfe;
+  --indigo-300: #a5b4fc;
+  --indigo-400: #818cf8;
+  --indigo-500: #6366f1;
+  --indigo-600: #4f46e5;
+  --indigo-700: #4338ca;
+  --indigo-900: #1e1b4b;
+
+  /* Semantic colours (light). */
+  color-scheme: light;
+  --bg: var(--stone-50);
+  --bg-subtle: var(--stone-100);
+  --panel: #ffffff;
+  --panel-raised: #ffffff;
+  --ink: var(--stone-800);
+  --ink-strong: var(--stone-950);
+  --muted: var(--stone-500);
+  --line: var(--stone-200);
+  --line-strong: var(--stone-300);
+  --accent: var(--indigo-600);
+  --accent-hover: var(--indigo-700);
+  --accent-soft: #eef0ff;
+  --accent-ink: #ffffff;
+  --ok: #1f6b45;
+  --ok-bg: #e6f4ec;
+  --ok-line: #b9dfc8;
+  --warn: #8a5a12;
+  --warn-bg: #fdf3e0;
+  --warn-line: #f0d9a8;
+  --danger: #a12f2f;
+  --danger-bg: #fceceb;
+  --danger-line: #f2c2bf;
+  --info: var(--indigo-700);
+  --info-bg: var(--accent-soft);
+  --focus: var(--indigo-500);
+  --selection: var(--indigo-100);
+  --backdrop: rgba(29, 27, 24, 0.45);
+
+  /* Spacing (4px base). */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 40px;
+  --space-8: 48px;
+
+  /* Radii. */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-full: 999px;
+  --radius: var(--radius-md);
+
+  /* Elevation. */
+  --shadow-1: 0 1px 2px rgba(29, 27, 24, 0.06), 0 1px 1px rgba(29, 27, 24, 0.04);
+  --shadow-2: 0 4px 12px rgba(29, 27, 24, 0.08), 0 1px 3px rgba(29, 27, 24, 0.06);
+  --shadow-3: 0 16px 40px rgba(29, 27, 24, 0.16), 0 4px 12px rgba(29, 27, 24, 0.08);
+
+  /* Type. */
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  --text-xs: 0.75rem;
+  --text-sm: 0.84rem;
+  --text-md: 0.95rem;
+  --text-lg: 1.1rem;
+  --text-xl: 1.35rem;
+  --text-2xl: 1.7rem;
+
+  /* Motion. */
+  --dur-fast: 120ms;
+  --dur: 200ms;
+  --dur-slow: 320ms;
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Sizes. */
+  --sidebar-w: 248px;
+  --topbar-h: 56px;
+  --content-max: 1240px;
+
+  /* Layers. */
+  --z-sidebar: 30;
+  --z-backdrop: 40;
+  --z-drawer: 50;
+  --z-dialog: 60;
+  --z-toast: 70;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: var(--stone-950);
+  --bg-subtle: var(--stone-900);
+  --panel: #1f1d1a;
+  --panel-raised: #262320;
+  --ink: #e8e4dd;
+  --ink-strong: #f7f4ee;
+  --muted: var(--stone-400);
+  --line: #302c27;
+  --line-strong: #3d3832;
+  --accent: var(--indigo-400);
+  --accent-hover: var(--indigo-300);
+  --accent-soft: #23234a;
+  --accent-ink: var(--stone-950);
+  --ok: #8fd3a9;
+  --ok-bg: #16281d;
+  --ok-line: #24503a;
+  --warn: #e7bd7a;
+  --warn-bg: #2f2416;
+  --warn-line: #5a4322;
+  --danger: #ee9c98;
+  --danger-bg: #351f1e;
+  --danger-line: #63302e;
+  --info: var(--indigo-300);
+  --info-bg: var(--accent-soft);
+  --focus: var(--indigo-300);
+  --selection: #34347a;
+  --backdrop: rgba(0, 0, 0, 0.6);
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-2: 0 4px 12px rgba(0, 0, 0, 0.45), 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-3: 0 16px 40px rgba(0, 0, 0, 0.6), 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: var(--stone-950);
+    --bg-subtle: var(--stone-900);
+    --panel: #1f1d1a;
+    --panel-raised: #262320;
+    --ink: #e8e4dd;
+    --ink-strong: #f7f4ee;
+    --muted: var(--stone-400);
+    --line: #302c27;
+    --line-strong: #3d3832;
+    --accent: var(--indigo-400);
+    --accent-hover: var(--indigo-300);
+    --accent-soft: #23234a;
+    --accent-ink: var(--stone-950);
+    --ok: #8fd3a9;
+    --ok-bg: #16281d;
+    --ok-line: #24503a;
+    --warn: #e7bd7a;
+    --warn-bg: #2f2416;
+    --warn-line: #5a4322;
+    --danger: #ee9c98;
+    --danger-bg: #351f1e;
+    --danger-line: #63302e;
+    --info: var(--indigo-300);
+    --info-bg: var(--accent-soft);
+    --focus: var(--indigo-300);
+    --selection: #34347a;
+    --backdrop: rgba(0, 0, 0, 0.6);
+    --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-2: 0 4px 12px rgba(0, 0, 0, 0.45), 0 1px 3px rgba(0, 0, 0, 0.4);
+    --shadow-3: 0 16px 40px rgba(0, 0, 0, 0.6), 0 4px 12px rgba(0, 0, 0, 0.5);
+  }
+}

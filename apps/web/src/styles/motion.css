@@ -1,0 +1,54 @@
+/*
+ * Everything that moves lives here, and only for people who have not asked
+ * for reduced motion. With `prefers-reduced-motion: reduce`, nothing animates.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  a, button, .button, input, select, textarea, .pill, .panel, .stat, .tree .node, .sidebar nav a, .chip {
+    transition:
+      background-color var(--dur-fast) var(--ease),
+      border-color var(--dur-fast) var(--ease),
+      color var(--dur-fast) var(--ease),
+      box-shadow var(--dur) var(--ease),
+      transform var(--dur-fast) var(--ease),
+      opacity var(--dur) var(--ease);
+  }
+  .panel:hover, .stat:hover { box-shadow: var(--shadow-2); }
+  .sidebar { transition: transform var(--dur-slow) var(--ease), box-shadow var(--dur-slow) var(--ease); }
+  .drawer-backdrop { transition: opacity var(--dur-slow) var(--ease); }
+  .sidebar .nav-group-header svg.chevron { transition: transform var(--dur) var(--ease); }
+  .tree .tree-toggle svg { transition: transform var(--dur) var(--ease); }
+  .tree .tree-children { transition: grid-template-rows var(--dur-slow) var(--ease); }
+  .tree .tree-children > div { transition: visibility var(--dur-slow); }
+  .progress .fill { transition: width var(--dur-slow) var(--ease); }
+  .skeleton { animation: shimmer 1.4s linear infinite; }
+  .loading-bar { animation: shimmer 1.2s linear infinite; }
+
+  .main > header { animation: fade-up var(--dur-slow) var(--ease) both; }
+  .panel, .stat { animation: fade-up var(--dur-slow) var(--ease) both; }
+  tbody tr { animation: fade-in var(--dur) var(--ease) both; animation-delay: calc(min(var(--i, 0), 12) * 22ms); }
+  .toast { animation: toast-in var(--dur-slow) var(--ease) both; }
+  .toast[data-leaving="true"] { animation: toast-out var(--dur) var(--ease) both; }
+  dialog.dialog[open] { animation: dialog-in var(--dur) var(--ease) both; }
+  dialog.dialog[open]::backdrop { animation: fade-in var(--dur) var(--ease) both; }
+  .notice { animation: fade-up var(--dur) var(--ease) both; }
+
+  ::view-transition-old(root) { animation: vt-out var(--dur-fast) var(--ease-in-out) both; }
+  ::view-transition-new(root) { animation: vt-in var(--dur-slow) var(--ease) both; }
+  ::view-transition-group(sidebar), ::view-transition-group(topbar) { animation: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
+}
+
+.sidebar { view-transition-name: sidebar; }
+.topbar { view-transition-name: topbar; }
+
+@keyframes fade-up { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+@keyframes toast-in { from { opacity: 0; transform: translateY(12px) scale(0.98); } to { opacity: 1; transform: none; } }
+@keyframes toast-out { from { opacity: 1; } to { opacity: 0; transform: translateY(8px); } }
+@keyframes dialog-in { from { opacity: 0; transform: translateY(-8px) scale(0.985); } to { opacity: 1; transform: none; } }
+@keyframes vt-out { from { opacity: 1; } to { opacity: 0; } }
+@keyframes vt-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }

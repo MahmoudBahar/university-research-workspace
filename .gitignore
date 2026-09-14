@@ -1,0 +1,48 @@
+# Dependencies and build output
+node_modules/
+dist/
+*.tsbuildinfo
+apps/web/dist/
+
+# Runtime state and machine settings (never in source control by default)
+data/research.sqlite
+data/research.sqlite-journal
+data/research.sqlite-wal
+data/research.sqlite-shm
+data/runs/
+data/revisions/
+data/commits/
+data/cache/
+data/backups/
+data/tmp/
+data/session.json
+config/local.json
+
+# Private applicant material (templates live in templates/)
+applicant/documents/
+applicant/extracted/
+applicant/profile.md
+applicant/email-style.md
+
+# Research notes and outreach may contain personal information.
+# They are excluded by default; export them deliberately with:
+#   npm run research -- backup create
+vault/universities/
+vault/units/
+vault/programs/
+vault/people/
+vault/labs/
+vault/publications/
+vault/sources/
+vault/outreach/
+vault/views/
+vault/index.md
+
+# Test output
+test-results/
+playwright-report/
+ci-demo-workspace/
+
+# OS noise
+.DS_Store
+Thumbs.db
