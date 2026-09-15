@@ -227,6 +227,7 @@ dialog.dialog .dialog-body { padding: var(--space-4); overflow: auto; max-height
 .empty-state svg.empty-icon { width: 34px; height: 34px; color: var(--stone-400); }
 .empty-state .empty-title { font-weight: 600; color: var(--ink); }
 .empty-state .empty-command { display: inline-flex; align-items: center; gap: var(--space-2); }
+.command-line { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1); }
 
 /* Diff */
 .diff { font-family: var(--mono); font-size: 0.82rem; border: 1px solid var(--line); border-radius: var(--radius-sm); overflow: auto; max-height: 480px; }
