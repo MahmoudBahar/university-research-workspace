@@ -8,6 +8,7 @@ import { DataTable, ErrorBanner, IssueList, Loading, Markdown, Notice, Panel, Pi
 import { AppLink as Link } from '../components/AppLink';
 import { Breadcrumbs } from '../components/Breadcrumbs';
 import { CommandHint } from '../components/ui';
+import { CopyButton } from '../components/CopyButton';
 
 interface PersonDetailResponse {
   person: {
@@ -55,6 +56,18 @@ interface PersonDetailResponse {
 const TABS = ['profile', 'sources', 'publications', 'relationships', 'workflow'] as const;
 type Tab = (typeof TABS)[number];
 
+/**
+ * The command for this person's next unfinished job. It mirrors the per-record
+ * prerequisites: Job 5 needs a source map (a finished Job 4 or mapped sources),
+ * and Job 7 needs research marked complete.
+ */
+function nextPersonCommand(personId: string, data: PersonDetailResponse): { lead: string; command: string } {
+  const mapped = data.tasks.some((task) => task.job_kind === 'map_person_sources' && task.state === 'complete') || data.sources.length > 0;
+  if (!mapped) return { lead: 'Job 4 comes first. Run', command: `/map-person ${personId}` };
+  if (!data.person?.research_complete) return { lead: 'Next, run', command: `/research-person ${personId}` };
+  return { lead: 'Next, run', command: `/draft-outreach ${personId}` };
+}
+
 export default function PersonDetail() {
   const { id } = useParams();
   const detail = useResource<PersonDetailResponse>(id ? `/api/people/${encodeURIComponent(id)}` : null, [id]);
@@ -88,6 +101,7 @@ export default function PersonDetail() {
   if (!data?.person) return <Notice kind="warn">No person record for {id}.</Notice>;
 
   const person = data.person;
+  const nextCommand = nextPersonCommand(person.entity_id, data);
 
   return (
     <>
@@ -144,8 +158,9 @@ export default function PersonDetail() {
               Job 7 · draft email
             </button>
           </div>
-          <p className="small muted">
-            Or run <code>/research-person {person.entity_id}</code> directly in Claude Code.
+          <p className="small muted command-line">
+            {nextCommand.lead} <code>{nextCommand.command}</code>
+            <CopyButton value={nextCommand.command} label="command" size="small" /> directly in Claude Code.
           </p>
           <DataTable
             caption="Tasks for this person"

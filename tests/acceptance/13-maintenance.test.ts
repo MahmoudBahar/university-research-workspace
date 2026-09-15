@@ -195,4 +195,18 @@ describe('maintenance: leases, migrations, reconcile cost, readiness, retrieval 
       (error: unknown) => error instanceof AppError && error.code === 'invalid_input',
     );
   });
+
+  test('the ready filter decides readiness before applying a limit', async (t) => {
+    const { ws } = await researched(t);
+    const { listTasks } = await import('@urw/core');
+    const all = listTasks(ws, { limit: 10_000 });
+    const isReady = (task: (typeof all)[number]) => task.blockers.length === 0 && ['pending', 'partial', 'retryable_failed'].includes(task.state);
+    const expected = all.filter(isReady).map((task) => task.id);
+    assert.ok(expected.length >= 2, 'the fixture should leave several ready tasks');
+    // The first rows in queue order are finished jobs, so limiting first would drop every ready task.
+    assert.ok(all[0] && !isReady(all[0]), 'the first task in queue order should not be ready');
+
+    assert.deepEqual(listTasks(ws, { ready: true }).map((task) => task.id), expected);
+    assert.deepEqual(listTasks(ws, { ready: true, limit: 1 }).map((task) => task.id), expected.slice(0, 1));
+  });
 });

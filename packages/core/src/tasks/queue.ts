@@ -279,6 +279,8 @@ export function refreshAllTaskStates(ws: Workspace): { updated: number } {
   return { updated: rows.length };
 }
 
+const READY_STATES: TaskState[] = ['pending', 'partial', 'retryable_failed'];
+
 export interface TaskFilter {
   jobKind?: JobKind;
   jobNumber?: number;
@@ -310,19 +312,26 @@ export function listTasks(ws: Workspace, filter: TaskFilter = {}): (TaskRow & { 
     clauses.push(fragment.sql);
     params.push(...bind(fragment, filter.universityId));
   }
+  if (filter.ready) {
+    clauses.push(`t.state IN (${READY_STATES.map(() => '?').join(', ')})`);
+    params.push(...READY_STATES);
+  }
   const where = clauses.length > 0 ? `WHERE ${clauses.join(' AND ')}` : '';
-  const rows = ws.db.all<TaskRow & { target_title: string | null }>(
-    `SELECT t.*, e.display_title AS target_title FROM tasks t
+  const query = `SELECT t.*, e.display_title AS target_title FROM tasks t
      LEFT JOIN entities e ON e.id = t.target_id
      ${where}
-     ORDER BY t.priority ASC, t.created_at ASC
-     LIMIT ?`,
-    ...params,
-    filter.limit ?? 200,
-  );
-  const withBlockers = rows.map((row) => ({ ...row, blockers: computeBlockers(ws, row) }));
-  if (filter.ready) return withBlockers.filter((row) => row.blockers.length === 0 && ['pending', 'partial', 'retryable_failed'].includes(row.state));
-  return withBlockers;
+     ORDER BY t.priority ASC, t.created_at ASC`;
+  if (filter.ready) {
+    // Blockers are computed per row, so readiness is decided before any limit.
+    // Limiting first would count only the ready tasks among the first N rows.
+    const ready = ws.db
+      .all<TaskRow & { target_title: string | null }>(query, ...params)
+      .map((row) => ({ ...row, blockers: computeBlockers(ws, row) }))
+      .filter((row) => row.blockers.length === 0);
+    return filter.limit === undefined ? ready : ready.slice(0, filter.limit);
+  }
+  const rows = ws.db.all<TaskRow & { target_title: string | null }>(`${query}\n     LIMIT ?`, ...params, filter.limit ?? 200);
+  return rows.map((row) => ({ ...row, blockers: computeBlockers(ws, row) }));
 }
 
 export interface ClaimInput {
