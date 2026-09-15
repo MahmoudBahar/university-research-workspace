@@ -185,6 +185,7 @@ export default function Queue() {
             {
               key: 'blockers',
               header: 'Blocked by',
+              sortValue: (task) => task.blockers.length,
               render: (task) =>
                 task.blockers.length === 0 ? (
                   <span className="muted">—</span>

@@ -197,6 +197,7 @@ export default function Overview() {
               {
                 key: 'blockers',
                 header: 'Blockers',
+                sortValue: (row) => row.blockers.length,
                 render: (row) => (row.blockers.length === 0 ? <span className="muted">—</span> : row.blockers.join(' ')),
               },
             ]}

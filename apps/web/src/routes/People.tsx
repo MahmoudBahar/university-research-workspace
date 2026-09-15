@@ -18,6 +18,10 @@ const ROLE_LABELS: Record<string, string> = {
   administrative_staff: 'Administrative staff',
 };
 
+function blockers(row: PersonRow) {
+  return row.readiness.issues.filter((issue) => issue.severity === 'blocker');
+}
+
 export default function People() {
   const [searchParams] = useSearchParams();
   const { withUniversity, selection } = useUniversity();
@@ -128,13 +132,13 @@ export default function People() {
             {
               key: 'email',
               header: 'Email ready',
-              sortValue: (row) => (row.readiness.emailReady ? 1 : 0),
+              sortValue: (row) => (row.readiness.emailReady ? -1 : blockers(row).length),
               render: (row) =>
                 row.readiness.emailReady ? (
                   <Pill tone="ok">ready</Pill>
                 ) : (
-                  <Pill tone="warn" title={row.readiness.issues.filter((i) => i.severity === 'blocker').map((i) => i.message).join(' ')}>
-                    {row.readiness.issues.filter((issue) => issue.severity === 'blocker').length} blocker(s)
+                  <Pill tone="warn" title={blockers(row).map((issue) => issue.message).join(' ')}>
+                    {blockers(row).length} blocker(s)
                   </Pill>
                 ),
             },
