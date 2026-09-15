@@ -72,3 +72,25 @@ test('the command palette finds a person and opens the profile', async ({ page }
   await expect(page).toHaveURL(/\/people\/person-/);
   await expect(page.getByRole('heading', { name: 'Dr Amara Osei' })).toBeVisible();
 });
+
+test('the Email ready column sorts on how many blockers a person has', async ({ page }) => {
+  await page.goto('/people');
+  // A person who is ready sorts ahead of everyone; the rest rank by blocker
+  // count, so the pill a row shows is the value the column sorts on.
+  const ranks = async () =>
+    (await page.locator('table tbody tr').allInnerTexts()).map((text) => {
+      const blockers = /(\d+) blocker\(s\)/.exec(text);
+      return blockers ? Number(blockers[1]) : -1;
+    });
+
+  const header = page.getByRole('button', { name: /^Email ready/ });
+  await header.click();
+  const ascending = await ranks();
+  // The fixture seeds a ready person, one-blocker people and two-blocker
+  // people; without more than one rank the assertions below prove nothing.
+  expect(new Set(ascending).size).toBeGreaterThan(1);
+  expect(ascending).toEqual([...ascending].sort((a, b) => a - b));
+
+  await header.click();
+  expect(await ranks()).toEqual([...ascending].sort((a, b) => b - a));
+});
