@@ -26,11 +26,11 @@ export default function OutreachList() {
         <DataTable
           rows={outreach.data ?? []}
           rowKey={(row) => row.id}
-          empty="No drafts yet. Job 7 creates them for people whose research is complete and whose contact route is verified."
+          empty="No drafts yet. /draft-outreach creates them for people whose research is complete and whose contact route is verified."
           loading={outreach.loading}
           emptyState={
             <EmptyState icon={Mail} title="No drafts yet." command="/draft-outreach --ready">
-              Job 7 creates them for people whose research is complete and whose contact route is verified.
+              /draft-outreach creates them for people whose research is complete and whose contact route is verified.
             </EmptyState>
           }
           columns={[

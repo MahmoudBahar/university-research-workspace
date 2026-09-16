@@ -58,13 +58,25 @@ type Tab = (typeof TABS)[number];
 
 /**
  * The command for this person's next unfinished job. It mirrors the per-record
- * prerequisites: Job 5 needs a source map (a finished Job 4 or mapped sources),
- * and Job 7 needs research marked complete.
+ * prerequisites: /research-person needs a source map (a finished /map-person run
+ * or mapped sources), and /draft-outreach needs research marked complete.
  */
-function nextPersonCommand(personId: string, data: PersonDetailResponse): { lead: string; command: string } {
+function nextPersonCommand(personId: string, data: PersonDetailResponse): { lead: string; command: string | null } {
   const mapped = data.tasks.some((task) => task.job_kind === 'map_person_sources' && task.state === 'complete') || data.sources.length > 0;
-  if (!mapped) return { lead: 'Job 4 comes first. Run', command: `/map-person ${personId}` };
-  if (!data.person?.research_complete) return { lead: 'Next, run', command: `/research-person ${personId}` };
+  if (!mapped) return { lead: 'Map the sources first. Run', command: `/map-person ${personId}` };
+  if (!data.person?.research_complete) {
+    // research_complete is withheld when verification records blocking issues, so
+    // a finished /research-person run can still leave the flag clear. Re-running it would change
+    // nothing; the blockers above are what needs resolving.
+    const researchTaskDone = data.tasks.some((task) => task.job_kind === 'research_person' && task.state === 'complete');
+    if (researchTaskDone) {
+      return {
+        lead: '/research-person has already run. Running it again will not clear the blockers listed under Contact and readiness.',
+        command: null,
+      };
+    }
+    return { lead: 'Next, run', command: `/research-person ${personId}` };
+  }
   return { lead: 'Next, run', command: `/draft-outreach ${personId}` };
 }
 
@@ -132,35 +144,54 @@ export default function PersonDetail() {
             </dd>
             <dt>Time zone</dt>
             <dd>
-              {person.timezone ?? <span className="muted">unknown</span>}{' '}
-              <Pill>{(person.timezone_basis ?? 'unknown').replace(/_/g, ' ')}</Pill>
-              {person.timezone_basis === 'campus_inferred' ? (
-                <div className="small muted">Inferred from the campus location. It does not say where the person is now.</div>
-              ) : null}
+              {person.timezone ? (
+                <>
+                  {person.timezone} <Pill>{(person.timezone_basis ?? 'unknown').replace(/_/g, ' ')}</Pill>
+                  {person.timezone_basis === 'campus_inferred' ? (
+                    <div className="dd-note">Inferred from the campus location. It does not say where the person is now.</div>
+                  ) : null}
+                </>
+              ) : (
+                /* With no zone recorded there is no basis to qualify, so one "unknown" says it. */
+                <span className="muted">unknown</span>
+              )}
             </dd>
             <dt>Research</dt>
             <dd>
-              <Pill tone={person.research_complete ? 'ok' : 'default'}>{person.research_complete ? 'complete' : 'pending'}</Pill>
+              <Pill tone={person.research_complete ? 'ok' : data.readiness.researchHeld ? 'warn' : 'default'}>
+                {person.research_complete ? 'complete' : data.readiness.researchHeld ? 'held by verification' : 'not started'}
+              </Pill>
+              {data.readiness.researchHeld ? (
+                <div className="dd-note">The research ran. Verification withheld completeness until the blockers below are resolved.</div>
+              ) : null}
             </dd>
           </dl>
-          <IssueList issues={data.readiness.issues} />
+          <div className="issue-block">
+            <IssueList issues={data.readiness.issues} />
+          </div>
         </Panel>
 
         <Panel title="Queue work for this person" hint="Queued tasks wait for a Claude Code session.">
           <div className="button-row">
             <button type="button" onClick={() => enqueue('4')} disabled={busy}>
-              Job 4 · map sources
+              /map-person
             </button>
             <button type="button" onClick={() => enqueue('5')} disabled={busy}>
-              Job 5 · deep research
+              /research-person
             </button>
             <button type="button" onClick={() => enqueue('7')} disabled={busy}>
-              Job 7 · draft email
+              /draft-outreach
             </button>
           </div>
           <p className="small muted command-line">
-            {nextCommand.lead} <code>{nextCommand.command}</code>
-            <CopyButton value={nextCommand.command} label="command" size="small" /> directly in Claude Code.
+            {nextCommand.command ? (
+              <>
+                {nextCommand.lead} <code>{nextCommand.command}</code>
+                <CopyButton value={nextCommand.command} label="command" size="small" /> directly in Claude Code.
+              </>
+            ) : (
+              nextCommand.lead
+            )}
           </p>
           <DataTable
             caption="Tasks for this person"
@@ -205,7 +236,7 @@ export default function PersonDetail() {
               caption="Mapped sources and what happened when they were fetched"
               rows={data.sources}
               rowKey={(source) => source.source_id}
-              empty="No sources mapped. Job 4 builds this map."
+              empty="No sources mapped. /map-person builds this map."
               columns={[
                 { key: 'category', header: 'Category', render: (source) => source.source_category.replace(/_/g, ' ') },
                 {
@@ -237,7 +268,7 @@ export default function PersonDetail() {
                 },
                 {
                   key: 'investigated',
-                  header: 'Job 5 read it',
+                  header: 'Investigated',
                   render: (source) => (source.investigated ? 'yes' : 'no'),
                 },
               ]}

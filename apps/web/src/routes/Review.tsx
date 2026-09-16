@@ -100,7 +100,7 @@ export default function Review() {
           loading={drafts.loading}
           emptyState={
             <EmptyState icon={ShieldCheck} title="Nothing is waiting for review." command="/draft-outreach --ready">
-              Drafts land here once Job 7 writes them.
+              Drafts land here once /draft-outreach writes them.
             </EmptyState>
           }
           columns={[

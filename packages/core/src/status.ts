@@ -136,7 +136,7 @@ export function nextActions(ws: Workspace): string[] {
     );
   }
   const readyDrafts = status.readyCandidates.filter((c) => c.emailReady);
-  if (readyDrafts.length > 0) actions.push(`${readyDrafts.length} candidate(s) are ready for Job 7: /draft-outreach --ready`);
+  if (readyDrafts.length > 0) actions.push(`${readyDrafts.length} candidate(s) are ready for outreach: /draft-outreach --ready`);
   if (status.outreach.byState['needs_review']) actions.push(`${status.outreach.byState['needs_review']} draft(s) need review: /review-outreach <draft-id>`);
   if (status.outreach.due + status.outreach.overdue > 0) {
     actions.push(`${status.outreach.due + status.outreach.overdue} planned send time(s) have passed. Send manually, then /mark-outreach-sent <draft-id>.`);

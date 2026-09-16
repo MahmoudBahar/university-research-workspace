@@ -5,7 +5,12 @@ import { AppError } from '../util/errors.js';
 import { todayIso } from '../util/time.js';
 import {
   canonicalPathFor,
+  entityAnchors,
+  findEntityByAnchor,
+  normaliseName,
+  normaliseUrl,
   outreachBriefPathFor,
+  recordDuplicateCandidate,
   resolveOrCreateEntity,
   requireEntity,
   sourceMapPathFor,
@@ -196,7 +201,7 @@ export function applyUniversityDiscovery(ws: Workspace, task: TaskRow, result: U
           ? { unitId, parentId, parentKind: 'unit' }
           : { unitId, parentId: universityId, parentKind: 'university' },
       },
-      { kind: 'discovery.enqueue', payload: { entityId: unitId, entityKind: 'unit', discoveredBy: task.id, reason: 'Job 1 discovery', scopeStatus: 'undecided' } },
+      { kind: 'discovery.enqueue', payload: { entityId: unitId, entityKind: 'unit', discoveredBy: task.id, reason: '/research-university discovery', scopeStatus: 'undecided' } },
     );
 
     const related = [
@@ -294,35 +299,93 @@ export function applyProgramResearch(ws: Workspace, task: TaskRow, result: Progr
   const files: StagedFile[] = [];
   const dbOps: DbOp[] = [];
   const preserved: AppliedResult['preserved'] = [];
-  const allowed = new Set([
-    ...ws.config.degreeScope.primary,
-    ...(ws.config.degreeScope.allowRelated ? ws.config.degreeScope.related : []),
-  ]);
+  const allowed = new Set(
+    [...ws.config.degreeScope.primary, ...(ws.config.degreeScope.allowRelated ? ws.config.degreeScope.related : [])].map(degreeKey),
+  );
   const excludedPrograms: string[] = [];
-
-  for (const program of result.programs) {
+  const inScope = result.programs.filter((program) => {
     const family = program.identity.degree_family ?? program.identity.award ?? '';
-    if (allowed.size > 0 && family && !allowed.has(family)) {
+    if (allowed.size > 0 && family && !allowed.has(degreeKey(family))) {
       excludedPrograms.push(`${program.identity.official_title} (${family}) is outside the configured degree scope.`);
-      continue;
+      return false;
     }
-    const programUrl = program.sources.find((s) => s.category === 'program_page' || s.category === 'graduate_calendar')?.url;
+    return true;
+  });
+
+  // A page is an identity only when exactly one program claims it. The first
+  // program page and the first calendar entry are candidates; a department
+  // listing that several programs cite is evidence, never an identity.
+  const identityUrls = inScope.map((program) => {
+    const candidates = [
+      program.sources.find((s) => s.category === 'program_page')?.url,
+      program.sources.find((s) => s.category === 'graduate_calendar')?.url,
+    ];
+    return [...new Set(candidates.filter((u): u is string => !!u).map(normaliseUrl).filter((u) => u !== ''))];
+  });
+  const claims = new Map<string, string[]>();
+  inScope.forEach((program, index) => {
+    for (const url of identityUrls[index] ?? []) claims.set(url, [...(claims.get(url) ?? []), program.identity.official_title]);
+  });
+  const sharedSourcePages = [...claims.entries()]
+    .filter(([, titles]) => titles.length > 1)
+    .map(([url, programs]) => ({ url, programs }));
+  const sharedUrls = new Set(sharedSourcePages.map((entry) => entry.url));
+  const contestedProgramUrls: { url: string; program: string; ownedBy: string }[] = [];
+  const recorded: { id: string; title: string; created: boolean; matchedBy: string | null }[] = [];
+  const seenIds = new Map<string, string>();
+  const stagedPaths = new Set<string>();
+
+  inScope.forEach((program, index) => {
+    const title = program.identity.official_title;
+    const nameKey = normaliseName(`${universityId}:${title}`);
+    const anchors: { kind: 'program_url'; value: string }[] = [];
+    const contestedOwners: string[] = [];
+    for (const url of identityUrls[index] ?? []) {
+      if (sharedUrls.has(url)) continue;
+      const owner = findEntityByAnchor(ws, 'program', 'program_url', url);
+      if (owner) {
+        const ownerNames = entityAnchors(ws, owner, 'name_in_unit');
+        if (ownerNames.length > 0 && !ownerNames.includes(nameKey)) {
+          // Another program already owns this page under a different title:
+          // the page is contested, so it identifies nobody. Never merge on it.
+          contestedProgramUrls.push({ url, program: title, ownedBy: owner });
+          contestedOwners.push(owner);
+          continue;
+        }
+      }
+      anchors.push({ kind: 'program_url', value: url });
+    }
+
     const resolved = resolveOrCreateEntity(ws, {
       kind: 'program',
-      displayTitle: program.identity.official_title,
+      displayTitle: title,
       anchors: [
-        ...(programUrl ? [{ kind: 'program_url' as const, value: programUrl }] : []),
-        { kind: 'name_in_unit' as const, value: `${universityId}:${program.identity.official_title}` },
-        { kind: 'display_name' as const, value: program.identity.official_title },
+        ...anchors,
+        { kind: 'name_in_unit' as const, value: `${universityId}:${title}` },
+        { kind: 'display_name' as const, value: title },
       ],
     });
     const programId = resolved.id;
+    const previousTitle = seenIds.get(programId);
+    if (previousTitle !== undefined) {
+      throw new AppError(
+        'invalid_input',
+        `Programs "${previousTitle}" and "${title}" both resolve to ${programId}. Give each program its own official title; the result was not applied.`,
+        { programId, titles: [previousTitle, title] },
+      );
+    }
+    seenIds.set(programId, title);
+    for (const owner of contestedOwners) {
+      if (owner !== programId) recordDuplicateCandidate(ws, programId, owner, 'shared_program_url', 'low');
+    }
+    recorded.push({ id: programId, title, created: resolved.created, matchedBy: resolved.matchedBy });
+
     const programPath = canonicalPathFor('program', programId) as string;
     const sources = ingestSources(ws, program.sources, programId, task.current_run_id ?? 'run');
     const administering = program.identity.administering_unit_ids.length > 0 ? program.identity.administering_unit_ids : [unitId];
 
     dbOps.push(
-      entityOp({ id: programId, kind: 'program', canonicalPath: programPath, displayTitle: program.identity.official_title, identityConfidence: 'probable' }),
+      entityOp({ id: programId, kind: 'program', canonicalPath: programPath, displayTitle: title, identityConfidence: 'probable', created: resolved.created }),
       {
         kind: 'program.upsert',
         payload: {
@@ -408,10 +471,15 @@ export function applyProgramResearch(ws: Workspace, task: TaskRow, result: Progr
       ],
       source: 'worker',
     });
-    files.push(noteFile(composed, programId, 'program'));
+    const staged = noteFile(composed, programId, 'program');
+    if (stagedPaths.has(staged.path)) {
+      throw new AppError('invalid_input', `Program note ${staged.path} would be written twice in one result.`, { path: staged.path });
+    }
+    stagedPaths.add(staged.path);
+    files.push(staged);
     dbOps.push(...composed.dbOps);
     if (composed.preservedSections.length) preserved.push({ vaultPath: programPath, sections: composed.preservedSections });
-  }
+  });
 
   return {
     files,
@@ -420,11 +488,19 @@ export function applyProgramResearch(ws: Workspace, task: TaskRow, result: Progr
     preserved,
     summary: {
       unit: unit.display_title,
-      programsRecorded: result.programs.length - excludedPrograms.length,
+      programsRecorded: recorded.length,
+      programs: recorded,
+      sharedSourcePages,
+      contestedProgramUrls,
       excludedByDegreeScope: excludedPrograms,
       noProgramFound: result.no_program_found ?? null,
     },
   };
+}
+
+/** Degree families compare by letters and digits only: `MMath`, `mmath` and `M.Math` are one family. */
+function degreeKey(value: string): string {
+  return value.toLowerCase().replace(/[^a-z0-9]/g, '');
 }
 
 /* ------------------------------------------------------------------ Job 3 */
@@ -460,7 +536,7 @@ export function applyPeopleDiscovery(ws: Workspace, task: TaskRow, result: Peopl
     const sources = ingestSources(ws, person.sources, resolved.id, task.current_run_id ?? 'run');
 
     dbOps.push(
-      entityOp({ id: resolved.id, kind: 'person', canonicalPath: personPath, displayTitle: person.full_name, identityConfidence: person.identity_confidence }),
+      entityOp({ id: resolved.id, kind: 'person', canonicalPath: personPath, displayTitle: person.full_name, identityConfidence: person.identity_confidence, created: resolved.created }),
       {
         kind: 'person.upsert',
         payload: {
@@ -482,7 +558,7 @@ export function applyPeopleDiscovery(ws: Workspace, task: TaskRow, result: Peopl
         evidenceStatus: 'confirmed',
         observedAt: todayIso(),
       }),
-      { kind: 'discovery.enqueue', payload: { entityId: resolved.id, entityKind: 'person', discoveredBy: task.id, reason: 'Job 3 directory discovery', scopeStatus: 'in_scope' } },
+      { kind: 'discovery.enqueue', payload: { entityId: resolved.id, entityKind: 'person', discoveredBy: task.id, reason: '/discover-people directory discovery', scopeStatus: 'in_scope' } },
     );
 
     for (const relationship of person.relationships) {
@@ -554,7 +630,7 @@ export function applyPeopleDiscovery(ws: Workspace, task: TaskRow, result: Peopl
         {
           id: 'research-summary',
           heading: 'Research summary',
-          content: 'Job 5 has not run for this person yet. Directory-level facts only.',
+          content: '/research-person has not run for this person yet. Directory-level facts only.',
         },
         { id: 'sources', heading: 'Sources', content: sourceSection(sources.list) },
       ],
@@ -694,7 +770,7 @@ export function applySourceMap(ws: Workspace, task: TaskRow, result: SourceMapRe
   const entriesTable =
     rows.length === 0
       ? NONE
-      : `| Source | Category | Identity | Access | Investigated by Job 5 | URL |\n| --- | --- | --- | --- | --- | --- |\n${rows
+      : `| Source | Category | Identity | Access | Investigated | URL |\n| --- | --- | --- | --- | --- | --- |\n${rows
           .map((row) => `| ${row.id} | ${row.category} | ${row.confidence} | ${row.access} | no | ${row.url} |`)
           .join('\n')}`;
 
@@ -834,7 +910,7 @@ export function applyPersonResearch(ws: Workspace, task: TaskRow, result: Person
     }
 
     dbOps.push(
-      entityOp({ id: resolved.id, kind: 'publication', canonicalPath: pubPath, displayTitle: publication.title, identityConfidence: publication.doi ? 'verified' : 'probable' }),
+      entityOp({ id: resolved.id, kind: 'publication', canonicalPath: pubPath, displayTitle: publication.title, identityConfidence: publication.doi ? 'verified' : 'probable', created: resolved.created }),
       {
         kind: 'publication.upsert',
         payload: {
@@ -940,7 +1016,7 @@ export function applyPersonResearch(ws: Workspace, task: TaskRow, result: Person
     const labPath = canonicalPathFor('lab', resolved.id) as string;
     labLinks.push({ label: lab.name, vaultPath: labPath, prefix: 'Laboratory' });
     dbOps.push(
-      entityOp({ id: resolved.id, kind: 'lab', canonicalPath: labPath, displayTitle: lab.name, identityConfidence: lab.url ? 'probable' : 'name_only' }),
+      entityOp({ id: resolved.id, kind: 'lab', canonicalPath: labPath, displayTitle: lab.name, identityConfidence: lab.url ? 'probable' : 'name_only', created: resolved.created }),
       { kind: 'lab.upsert', payload: { entityId: resolved.id, officialName: lab.name, url: lab.url ?? null } },
       relationshipOp({
         fromId: personId,
@@ -951,7 +1027,7 @@ export function applyPersonResearch(ws: Workspace, task: TaskRow, result: Person
         evidenceStatus: 'confirmed',
         observedAt: todayIso(),
       }),
-      { kind: 'discovery.enqueue', payload: { entityId: resolved.id, entityKind: 'lab', discoveredBy: task.id, reason: 'Discovered during Job 5', scopeStatus: 'unknown' } },
+      { kind: 'discovery.enqueue', payload: { entityId: resolved.id, entityKind: 'lab', discoveredBy: task.id, reason: 'Discovered during /research-person', scopeStatus: 'unknown' } },
     );
     if (budget.take()) {
       dbOps.push({
@@ -985,7 +1061,7 @@ export function applyPersonResearch(ws: Workspace, task: TaskRow, result: Person
           officialName: lab.name,
           url: lab.url,
           role: lab.role,
-          discoveredVia: `Job 5 research on ${person.display_title}`,
+          discoveredVia: `/research-person on ${person.display_title}`,
           labPath,
           relatedLinks: [{ label: person.display_title, vaultPath: personPath, prefix: lab.role ?? 'Member' }],
         }),
@@ -1016,7 +1092,7 @@ export function applyPersonResearch(ws: Workspace, task: TaskRow, result: Person
     );
     studentLinks.push({ label: `${student.full_name} (${student.role})`, vaultPath: studentPath, prefix: 'Assistant or student' });
     dbOps.push(
-      entityOp({ id: resolved.id, kind: 'person', canonicalPath: studentPath, displayTitle: student.full_name, identityConfidence: student.profile_url ? 'probable' : 'name_only' }),
+      entityOp({ id: resolved.id, kind: 'person', canonicalPath: studentPath, displayTitle: student.full_name, identityConfidence: student.profile_url ? 'probable' : 'name_only', created: resolved.created }),
       {
         kind: 'person.upsert',
         payload: {
@@ -1073,7 +1149,7 @@ export function applyPersonResearch(ws: Workspace, task: TaskRow, result: Person
           roleCategory: student.role_category,
           profileUrl: student.profile_url,
           sourceUrl: student.source_url,
-          discoveredVia: `Job 5 research on ${person.display_title}`,
+          discoveredVia: `/research-person on ${person.display_title}`,
           relatedLinks: [{ label: person.display_title, vaultPath: personPath, prefix: 'Listed with' }],
           personPath: studentPath,
         }),
@@ -1420,7 +1496,7 @@ export function applyLabResearch(ws: Workspace, task: TaskRow, result: LabResear
   const budget = expansionBudget(ws);
 
   dbOps.push(
-    entityOp({ id: labId, kind: 'lab', canonicalPath: labPath, displayTitle: result.lab.official_name, identityConfidence: result.lab.url ? 'verified' : 'name_only' }),
+    entityOp({ id: labId, kind: 'lab', canonicalPath: labPath, displayTitle: result.lab.official_name, identityConfidence: result.lab.url ? 'verified' : 'name_only', created: resolved.created }),
     {
       kind: 'lab.upsert',
       payload: {
@@ -1472,7 +1548,7 @@ export function applyLabResearch(ws: Workspace, task: TaskRow, result: LabResear
       memberResolved.id,
     );
     dbOps.push(
-      entityOp({ id: memberResolved.id, kind: 'person', canonicalPath: memberPath, displayTitle: member.full_name, identityConfidence: member.profile_url ? 'probable' : 'name_only' }),
+      entityOp({ id: memberResolved.id, kind: 'person', canonicalPath: memberPath, displayTitle: member.full_name, identityConfidence: member.profile_url ? 'probable' : 'name_only', created: memberResolved.created }),
       {
         kind: 'person.upsert',
         payload: {

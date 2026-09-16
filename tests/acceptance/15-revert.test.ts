@@ -168,7 +168,7 @@ describe('reverting a finished job', () => {
     const step = report.plan.order.find((s) => s.taskId === job5.id);
     assert.ok(step?.entitiesKept.some((e) => e.kind === 'publication' && e.reason === 'shared'));
     const profile = readFileSync(join(ws.paths.vault, 'people', oseiId, 'profile.md'), 'utf8');
-    assert.match(profile, /Job 5 has not run for this person yet/, 'the Job 3 stub is restored');
+    assert.match(profile, /\/research-person has not run for this person yet/, 'the /discover-people stub is restored');
     assert.equal(getTask(ws, job5.id).state, 'pending');
     assert.equal(listTasks(ws, { jobKind: 'verify_person', targetId: oseiId }).length, 0, 'the verification it queued is gone');
     assert.equal(count(ws, "SELECT COUNT(*) AS n FROM relationships WHERE from_id = ? AND rel_type = 'authored'", oseiId), 0);

@@ -135,6 +135,8 @@ export function entityOp(payload: {
   canonicalPath?: string | null;
   displayTitle: string;
   identityConfidence?: string;
+  /** True when this task's run allocated the record; a later revert relies on it. */
+  created?: boolean;
 }): DbOp {
   return { kind: 'entity.upsert', payload: { ...payload } };
 }
@@ -202,7 +204,7 @@ export function personStubSections(input: {
     {
       id: 'research-summary',
       heading: 'Research summary',
-      content: 'Not researched yet. Queue Job 4 and Job 5 for this person if they are in scope.',
+      content: 'Not researched yet. Queue /map-person and /research-person for this person if they are in scope.',
     },
   ];
 }
@@ -213,7 +215,7 @@ export function emptySourceMapSections(personPath: string, profileLink: { label:
     {
       id: 'summary',
       heading: 'Summary',
-      content: 'Job 4 has not mapped this person’s sources yet. This note exists so the profile has somewhere to link.',
+      content: '/map-person has not mapped this person’s sources yet. This note exists so the profile has somewhere to link.',
     },
     { id: 'entries', heading: 'Mapped sources', content: NONE },
     { id: 'absent', heading: 'Categories with nothing found', content: NONE },
@@ -240,7 +242,7 @@ export function labStubSections(input: {
   relatedLinks: { label: string; vaultPath: string; prefix?: string }[];
 }): { id: string; heading: string; content: string }[] {
   return [
-    { id: 'overview', heading: 'Overview', content: `Discovered via ${input.discoveredVia}. Job 6 has not researched this laboratory yet.` },
+    { id: 'overview', heading: 'Overview', content: `Discovered via ${input.discoveredVia}. /research-labs has not researched this laboratory yet.` },
     {
       id: 'identity',
       heading: 'Laboratory identity',
