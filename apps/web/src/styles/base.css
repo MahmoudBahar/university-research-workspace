@@ -154,3 +154,35 @@ pre.body-preview { white-space: pre-wrap; word-break: break-word; }
 /* An explanatory line under a value pill needs a gap, or it reads as a caption
    glued to the pill rather than a sentence about the field. */
 .dd-note { margin-top: var(--space-2); font-size: var(--text-sm); color: var(--muted); }
+
+/* A note beside its section list. The outline sticks while the note scrolls,
+   and drops below the note when there is no room for a second column. */
+.note-with-outline { display: grid; grid-template-columns: minmax(0, 1fr) 15rem; gap: var(--space-5); align-items: start; }
+.note-outline {
+  position: sticky;
+  /* Clear the sticky topbar, or the first entries scroll underneath it. */
+  top: calc(var(--topbar-h) + var(--space-3));
+  max-height: calc(100vh - var(--topbar-h) - var(--space-6));
+  overflow-y: auto;
+}
+.note-outline-title {
+  font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.04em;
+  color: var(--muted); font-weight: 600; margin-bottom: var(--space-2);
+}
+.note-outline ul { list-style: none; margin: 0; padding: 0; border-left: 1px solid var(--line); }
+.note-outline li { margin: 0; }
+.note-outline li.lvl-3 a { padding-left: var(--space-4); font-size: var(--text-xs); }
+.note-outline a {
+  display: block; padding: 0.22rem var(--space-3); margin-left: -1px;
+  border-left: 2px solid transparent; color: var(--muted);
+  font-size: var(--text-sm); line-height: 1.35; text-decoration: none;
+}
+.note-outline a:hover { color: var(--ink-strong); background: var(--bg-subtle); }
+.note-outline li.is-active > a { color: var(--accent); border-left-color: var(--accent); font-weight: 600; }
+/* Scrolling to a heading must land it below the topbar, not behind it. */
+.markdown :where(h1, h2, h3, h4) { scroll-margin-top: calc(var(--topbar-h) + var(--space-3)); }
+.markdown :where(h1, h2, h3, h4):focus-visible { outline: none; }
+@media (max-width: 1100px) {
+  .note-with-outline { grid-template-columns: minmax(0, 1fr); }
+  .note-outline { position: static; max-height: none; order: -1; }
+}
