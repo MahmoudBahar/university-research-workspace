@@ -9,6 +9,7 @@ import { AppLink as Link } from '../components/AppLink';
 import { Breadcrumbs } from '../components/Breadcrumbs';
 import { CommandHint } from '../components/ui';
 import { CopyButton } from '../components/CopyButton';
+import { NoteOutline } from '../components/NoteOutline';
 
 interface PersonDetailResponse {
   person: {
@@ -221,10 +222,13 @@ export default function PersonDetail() {
       >
         {tab === 'profile' ? (
           data.profileNote ? (
-            <>
-              <p className="small muted mono">{data.profileNote.path}</p>
-              <Markdown text={data.profileNote.text} />
-            </>
+            <div className="note-with-outline">
+              <div id="profile-note">
+                <p className="small muted mono">{data.profileNote.path}</p>
+                <Markdown text={data.profileNote.text} />
+              </div>
+              <NoteOutline text={data.profileNote.text} containerId="profile-note" />
+            </div>
           ) : (
             <Notice kind="warn">No profile note exists yet.</Notice>
           )
