@@ -160,7 +160,13 @@ export function buildContextPacket(ws: Workspace, taskId: string): ContextPacket
       inputs['unitNote'] = noteExcerpt(ws, canonicalPathFor('unit', unit.id) as string);
       inputs['degreeScope'] = ws.config.degreeScope;
       if (task.job_kind === 'research_programs') {
-        instructions.push('Preserve exact official degree names. Do not substitute a different degree when no MASc exists.');
+        const primary = ws.config.degreeScope.primary.join(', ') || '(none configured)';
+        instructions.push(
+          `Preserve exact official degree names. The primary degree families in scope are ${primary}; record degree_family as the short award code exactly as listed. Do not substitute a different degree when none of them exists.`,
+        );
+        instructions.push(
+          'List each program’s own page or calendar entry first in its sources. A department page that lists several programs is category "other", never "program_page".',
+        );
         instructions.push('Never convert a percentage requirement into a GPA without a supported conversion.');
       } else {
         instructions.push('Handle directory pagination and every directory category; record the coverage ledger.');

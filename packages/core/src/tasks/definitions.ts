@@ -53,7 +53,7 @@ export const JOBS: Record<JobKind, JobDefinition> = {
   research_programs: {
     kind: 'research_programs',
     jobNumber: 2,
-    label: 'MASc program research',
+    label: 'Graduate program research',
     targetKind: 'unit',
     scopeGated: true,
     agent: 'program-researcher',

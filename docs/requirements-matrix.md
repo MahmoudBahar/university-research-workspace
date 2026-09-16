@@ -41,7 +41,7 @@ and `tests/e2e/` (Playwright).
 | Job | Contract | Applier | Worker | Verification |
 | --- | --- | --- | --- | --- |
 | 1 University and department discovery | `UniversityDiscoveryResult` | `applyUniversityDiscovery` | `university-discoverer` | `01-pipeline`, `02-scope` |
-| 2 MASc program research | `ProgramResearchResult` | `applyProgramResearch` | `program-researcher` | `01-pipeline`, `09-evidence` |
+| 2 Graduate program research (primary degrees, e.g. MASc, MMath) | `ProgramResearchResult` | `applyProgramResearch` | `program-researcher` | `01-pipeline`, `09-evidence` |
 | 3 People discovery | `PeopleDiscoveryResult` | `applyPeopleDiscovery` | `people-discoverer` | `01-pipeline`, `03-identity` |
 | 4 Source mapping | `SourceMapResult` | `applySourceMap` | `source-mapper` | `01-pipeline`, `09-evidence` |
 | 5 Deep person research | `PersonResearchResult` | `applyPersonResearch` | `person-researcher` | `01-pipeline`, `09-evidence` |

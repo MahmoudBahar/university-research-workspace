@@ -137,4 +137,14 @@ describe('identity and deduplication', () => {
     assert.equal(normaliseUrl('https://example.invalid/'), 'example.invalid');
     assert.equal(normaliseUrl(normaliseUrl('https://example.invalid/People/Osei')), 'example.invalid/People/Osei');
   });
+
+  test('URL normalisation keeps hash routes and drops in-page anchors', () => {
+    const entry = 'https://example.invalid/catalog#/programs/rJbixJ0Ao2';
+    assert.equal(normaliseUrl(entry), 'example.invalid/catalog#/programs/rJbixJ0Ao2');
+    assert.notEqual(normaliseUrl(entry), normaliseUrl('https://example.invalid/catalog#/programs/HkHe1R23p'));
+    assert.equal(normaliseUrl(normaliseUrl(entry)), normaliseUrl(entry));
+    assert.equal(normaliseUrl('https://example.invalid/catalog/#!/programs/x/'), 'example.invalid/catalog#!/programs/x');
+    assert.equal(normaliseUrl('https://example.invalid/People/Osei#publications'), 'example.invalid/People/Osei');
+    assert.equal(normaliseUrl('https://example.invalid/catalog#/'), 'example.invalid/catalog');
+  });
 });

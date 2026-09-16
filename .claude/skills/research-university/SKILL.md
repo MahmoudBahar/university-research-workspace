@@ -129,7 +129,7 @@ extension is connected.
 | `--job` | Skill that focuses on it | What it does |
 | --- | --- | --- |
 | 1 | this skill | University and department discovery |
-| 2 | `/research-programs` | MASc program research for included units |
+| 2 | `/research-programs` | Graduate program research (the configured primary degrees) for included units |
 | 3 | `/discover-people` | Faculty and assistant discovery |
 | 4 | `/map-person` | Per-person source mapping |
 | 5 | `/research-person` | Deep person research |
@@ -148,12 +148,17 @@ run reads them from the packet and continues rather than starting over.
 
 ## 8. Refresh
 
-`--refresh <entity-id>` re-runs the relevant job for one record:
+`--refresh <entity-id>` re-runs the relevant job for one record on top of what
+is already recorded:
 
 ```
 npm run research -- tasks list --target <entity-id> --json
 npm run research -- tasks retry --task <task-id>
 ```
+
+When the earlier result must be discarded first (wrong records, a merge that
+should not have happened, a changed degree scope), use `/revert-job` instead:
+it removes what that job wrote and returns the task to pending.
 
 Refreshing one person's research never re-runs department discovery. Refreshing
 email style never re-runs research at all.
