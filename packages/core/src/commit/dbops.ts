@@ -545,6 +545,111 @@ const HANDLERS: Record<string, (db: Database, p: Payload, commitId: string) => v
     );
   },
 
+  /* ---------------------------------------------------------------- revert */
+
+  'entity.delete': (db, p) => {
+    const id = str(p, 'entityId');
+    // Two references lack ON DELETE clauses; clear them so the delete cannot fail.
+    db.run('UPDATE publications SET version_of = NULL WHERE version_of = ?', id);
+    db.run('UPDATE entities SET merged_into = NULL WHERE merged_into = ?', id);
+    db.run('DELETE FROM duplicate_candidates WHERE entity_id = ? OR other_entity_id = ?', id, id);
+    db.run('DELETE FROM claim_index WHERE entity_id = ?', id);
+    db.run('DELETE FROM note_index WHERE entity_id = ?', id);
+    db.run('DELETE FROM entities WHERE id = ?', id);
+  },
+
+  'alias.delete': (db, p) => {
+    db.run(
+      'DELETE FROM entity_aliases WHERE entity_id = ? AND anchor_kind = ? AND anchor_value = ?',
+      str(p, 'entityId'),
+      str(p, 'anchorKind'),
+      str(p, 'anchorValue'),
+    );
+  },
+
+  'relationship.delete': (db, p) => {
+    db.run(
+      'DELETE FROM relationships WHERE from_id = ? AND to_id = ? AND rel_type = ? AND role = ?',
+      str(p, 'fromId'),
+      str(p, 'toId'),
+      str(p, 'relType'),
+      String(p['role'] ?? ''),
+    );
+  },
+
+  'person_source.delete': (db, p) => {
+    db.run('DELETE FROM person_sources WHERE person_id = ? AND created_at >= ?', str(p, 'personId'), str(p, 'sinceIso'));
+  },
+
+  'person.reset': (db, p) => {
+    const allowed = new Set(['official_title', 'profile_url', 'orcid', 'email', 'email_evidence', 'timezone', 'timezone_basis', 'timezone_observed_at', 'contact_rule']);
+    const fields = ((p['nullFields'] as string[] | undefined) ?? []).filter((f) => allowed.has(f));
+    const sets = ['research_complete = 0', 'email_ready = 0', 'readiness_detail = NULL', ...fields.map((f) => `${f} = NULL`)];
+    db.run(`UPDATE people SET ${sets.join(', ')}, updated_at = ? WHERE entity_id = ?`, nowIso(), str(p, 'entityId'));
+  },
+
+  'outreach.delete': (db, p) => {
+    const id = str(p, 'outreachId');
+    const row = db.get<{ draft_path: string; brief_path: string }>('SELECT draft_path, brief_path FROM outreach WHERE id = ?', id);
+    if (!row) {
+      db.run("DELETE FROM entities WHERE id = ? AND kind = 'outreach'", id);
+      return;
+    }
+    const sent = db.get<{ n: number }>('SELECT COUNT(*) AS n FROM sent_events WHERE outreach_id = ?', id)?.n ?? 0;
+    const approved = db.get<{ n: number }>('SELECT COUNT(*) AS n FROM approvals WHERE outreach_id = ? AND invalidated_at IS NULL', id)?.n ?? 0;
+    if (sent > 0 || approved > 0) {
+      throw new Error(`Outreach ${id} has sent or approved history and cannot be removed.`);
+    }
+    for (const path of [row.draft_path, row.brief_path]) {
+      const indexed = path.startsWith('vault/') ? path : `vault/${path}`;
+      db.run('DELETE FROM claim_index WHERE path = ?', indexed);
+      db.run('DELETE FROM note_index WHERE path = ?', indexed);
+      db.run('UPDATE note_issues SET resolved_at = ? WHERE path = ? AND resolved_at IS NULL', nowIso(), indexed);
+    }
+    db.run('DELETE FROM outreach WHERE id = ?', id);
+    db.run("DELETE FROM entities WHERE id = ? AND kind = 'outreach'", id);
+  },
+
+  'note.forget': (db, p) => {
+    const path = str(p, 'path');
+    db.run('DELETE FROM claim_index WHERE path = ?', path);
+    db.run('DELETE FROM note_index WHERE path = ?', path);
+    db.run('UPDATE note_issues SET resolved_at = ? WHERE path = ? AND resolved_at IS NULL', nowIso(), path);
+  },
+
+  'discovery.delete': (db, p) => {
+    // Only undecided rows go; a decision the user already made is kept.
+    db.run("DELETE FROM discovery_queue WHERE discovered_by = ? AND decision = 'undecided'", str(p, 'taskId'));
+  },
+
+  'task.reset': (db, p) => {
+    const taskId = str(p, 'taskId');
+    db.run(
+      `UPDATE tasks SET state = 'pending', fencing_token = MAX(fencing_token, ?), owner_id = NULL, lease_expires_at = NULL,
+              current_run_id = NULL, progress_json = NULL, completed_at = NULL, last_error = NULL, blocked_reason = NULL,
+              next_attempt_at = NULL, updated_at = ?
+       WHERE id = ?`,
+      num(p, 'fencingToken'),
+      nowIso(),
+      taskId,
+    );
+    db.run("UPDATE task_runs SET state = 'reverted', ended_at = COALESCE(ended_at, ?) WHERE task_id = ? AND state != 'reverted'", nowIso(), taskId);
+  },
+
+  'task.delete': (db, p) => {
+    db.run('DELETE FROM tasks WHERE id = ?', str(p, 'taskId'));
+  },
+
+  'commit.state': (db, p) => {
+    db.run(
+      'UPDATE artifact_commits SET state = ?, conflict_detail = ?, updated_at = ? WHERE id = ?',
+      str(p, 'state'),
+      strOrNull(p, 'detail'),
+      nowIso(),
+      str(p, 'commitId'),
+    );
+  },
+
   'settings.set': (db, p) => {
     db.run(
       `INSERT INTO app_settings (key, value_json, updated_at) VALUES (?, ?, ?)

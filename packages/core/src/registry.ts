@@ -32,6 +32,10 @@ export interface IdentityAnchor {
  *  - medium  : a normalised name scoped to one unit. Matches only when neither
  *              record carries a conflicting strong anchor.
  *  - weak    : a display name. Never merges; it only raises a duplicate candidate.
+ *
+ * A strong URL anchor must identify exactly one record. Callers are responsible
+ * for that: a page that lists several programs, people or labs is evidence, not
+ * an identity, and must not be passed as an anchor (see `findEntityByAnchor`).
  */
 export const ANCHOR_STRENGTH: Record<AnchorKind, AnchorStrength> = {
   profile_url: 'strong',
@@ -52,6 +56,10 @@ export const ANCHOR_STRENGTH: Record<AnchorKind, AnchorStrength> = {
  * port, no fragment, no trailing slash. Paths keep their case because paths are
  * case-sensitive. Running this twice returns the same value, so an already
  * normalised anchor still matches.
+ *
+ * A hash route (`#/…` or `#!/…`) is kept: single-page catalogues such as Kuali
+ * put the whole address of an entry there, so dropping it would make every
+ * entry the same page. A plain in-page anchor (`#section`) is still dropped.
  */
 export function normaliseUrl(raw: string): string {
   const trimmed = raw.trim();
@@ -59,6 +67,7 @@ export function normaliseUrl(raw: string): string {
   const withScheme = /^[a-z][a-z0-9+.-]*:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
   try {
     const url = new URL(withScheme);
+    const route = /^#!?\//.test(url.hash) ? url.hash.replace(/\/+$/, '').replace(/^#!?$/, '') : '';
     url.hash = '';
     const host = url.hostname.toLowerCase().replace(/^www\./, '');
     const port =
@@ -67,7 +76,7 @@ export function normaliseUrl(raw: string): string {
         : `:${url.port}`;
     const path = url.pathname.replace(/\/+$/, '');
     // http and https name the same destination for identity purposes.
-    return `${host}${port}${path}${url.search}`;
+    return `${host}${port}${path}${url.search}${route}`;
   } catch {
     const [head = '', ...rest] = trimmed.split('/');
     return [head.toLowerCase().replace(/^www\./, ''), ...rest].join('/').replace(/\/+$/, '');
@@ -215,7 +224,24 @@ function findByAnchor(ws: Workspace, kind: EntityKind, anchorKind: AnchorKind, v
   return row?.entity_id;
 }
 
-function recordDuplicateCandidate(ws: Workspace, entityId: string, otherId: string, reason: string, confidence: string): void {
+/**
+ * Which live record, if any, currently owns an anchor. The raw value is
+ * normalised exactly once, the same way `resolveOrCreateEntity` does.
+ */
+export function findEntityByAnchor(ws: Workspace, kind: EntityKind, anchorKind: AnchorKind, rawValue: string): string | undefined {
+  const value = normaliseAnchorValue(anchorKind, rawValue);
+  if (value === '') return undefined;
+  return findByAnchor(ws, kind, anchorKind, value);
+}
+
+/** All anchors of one kind attached to a record, in their normalised form. */
+export function entityAnchors(ws: Workspace, entityId: string, anchorKind: AnchorKind): string[] {
+  return ws.db
+    .all<{ anchor_value: string }>('SELECT anchor_value FROM entity_aliases WHERE entity_id = ? AND anchor_kind = ?', entityId, anchorKind)
+    .map((row) => row.anchor_value);
+}
+
+export function recordDuplicateCandidate(ws: Workspace, entityId: string, otherId: string, reason: string, confidence: string): void {
   const existing = ws.db.get<{ id: string }>(
     'SELECT id FROM duplicate_candidates WHERE entity_id = ? AND other_entity_id = ? AND reason = ? AND resolved_at IS NULL',
     entityId,

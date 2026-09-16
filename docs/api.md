@@ -270,6 +270,8 @@ tasks checkpoints --task <id>
 tasks complete --task <id> --owner <id> --token <n> [--result <path>]
 tasks fail --task <id> --owner <id> --token <n> --error "..." [--category <c>]
 tasks retry|cancel --task <id>
+tasks revert (--task <id> | --job <n> --target <id>) [--cascade] [--apply] [--force]
+                                        Undo a finished job; a dry run until --apply
 tasks reclaim
 
 people list [--unit <id>]

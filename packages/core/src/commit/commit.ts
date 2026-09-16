@@ -1,5 +1,5 @@
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
-import { join, dirname } from 'node:path';
+import { existsSync, readFileSync, readdirSync, rmdirSync, unlinkSync } from 'node:fs';
+import { join, dirname, relative } from 'node:path';
 import type { Workspace } from '../workspace.js';
 import type { CommitManifest, CommitState, DbOp, FileOp } from './manifest.js';
 import { applyDbOps } from './dbops.js';
@@ -20,9 +20,11 @@ export interface StagedFile {
    * `null` requires the file to be absent. `'*'` overwrites unconditionally.
    */
   expectedPrior?: string | null | '*';
+  /** Remove the file instead of installing `content` (which is then ignored). */
+  remove?: true;
   entityId?: string;
   noteType?: string;
-  source?: 'worker' | 'core' | 'user';
+  source?: 'worker' | 'core' | 'user' | 'revert';
 }
 
 export interface PrepareCommitInput {
@@ -63,6 +65,27 @@ function currentHash(absPath: string): string | null {
   return sha256Bytes(readFileSync(absPath));
 }
 
+/** Where committed bytes for a hash live; exported so a revert can read prior content. */
+export function revisionStorePathFor(ws: Workspace, sha: string): string {
+  return revisionStorePath(ws, sha);
+}
+
+/**
+ * Per-record directories (`vault/people/<id>/`, `vault/outreach/<id>/`,
+ * `vault/universities/<id>/`) are removed once their last note is gone, so a
+ * reverted record leaves no empty folder behind. Shared directories stay.
+ */
+function removeEmptyRecordDir(ws: Workspace, absFile: string): void {
+  const dir = dirname(absFile);
+  const rel = toPosix(relative(ws.paths.vault, dir));
+  if (!/^(people|outreach|universities)\/[^/]+$/.test(rel)) return;
+  try {
+    if (readdirSync(dir).length === 0) rmdirSync(dir);
+  } catch {
+    /* a concurrent writer may have re-created it; leaving it is harmless */
+  }
+}
+
 function retainRevision(ws: Workspace, absPath: string): void {
   if (!existsSync(absPath)) return;
   const bytes = readFileSync(absPath);
@@ -78,14 +101,21 @@ function retainRevision(ws: Workspace, absPath: string): void {
  * Nothing in the vault or the database changes during this phase.
  */
 export function prepareCommit(ws: Workspace, input: PrepareCommitInput): CommitManifest {
+  // One path, one outcome. Two ops for the same file would silently install
+  // whichever came last, and the revision history would record the other.
+  const seenPaths = new Set<string>();
+  for (const file of input.files) {
+    if (seenPaths.has(file.path)) {
+      throw new AppError('invalid_input', `Commit stages ${file.path} more than once; the result was not applied.`, { path: file.path });
+    }
+    seenPaths.add(file.path);
+  }
+
   const commitId = opaqueId('commit');
   const dir = commitDir(ws, commitId);
   ensureDir(join(dir, 'staged'));
 
   const files: FileOp[] = input.files.map((file, index) => {
-    const bytes = typeof file.content === 'string' ? Buffer.from(file.content, 'utf8') : Buffer.from(file.content);
-    const stagedName = `${String(index).padStart(4, '0')}.bin`;
-    writeFileAtomic(join(dir, 'staged', stagedName), bytes);
     const abs = join(ws.paths.root, fromPosix(file.path));
     const prior =
       file.expectedPrior === undefined
@@ -93,6 +123,22 @@ export function prepareCommit(ws: Workspace, input: PrepareCommitInput): CommitM
         : file.expectedPrior === '*'
           ? '*'
           : file.expectedPrior;
+    if (file.remove) {
+      return {
+        path: file.path,
+        staged: '',
+        sha256: '',
+        size: 0,
+        expectedPriorSha256: prior,
+        remove: true,
+        entityId: file.entityId,
+        noteType: file.noteType,
+        source: file.source ?? 'core',
+      };
+    }
+    const bytes = typeof file.content === 'string' ? Buffer.from(file.content, 'utf8') : Buffer.from(file.content);
+    const stagedName = `${String(index).padStart(4, '0')}.bin`;
+    writeFileAtomic(join(dir, 'staged', stagedName), bytes);
     return {
       path: file.path,
       staged: stagedName,
@@ -200,10 +246,27 @@ export function applyCommit(ws: Workspace, commitId: string, options: { owner?: 
     const skipped: string[] = [];
 
     // Phase 1: verify every file can be installed before touching any of them.
-    const plan: { op: FileOp; abs: string; action: 'install' | 'skip' }[] = [];
+    const plan: { op: FileOp; abs: string; action: 'install' | 'remove' | 'skip' }[] = [];
     for (const op of manifest.files) {
       const abs = join(ws.paths.root, fromPosix(op.path));
       const current = currentHash(abs);
+      if (op.remove) {
+        // A removal is complete once the file is gone; replay skips it.
+        if (current === null) {
+          plan.push({ op, abs, action: 'skip' });
+        } else if (op.expectedPriorSha256 === '*' || current === op.expectedPriorSha256) {
+          plan.push({ op, abs, action: 'remove' });
+        } else {
+          const detail = { path: op.path, expected: op.expectedPriorSha256, actual: current, reason: 'file_changed_outside_commit' };
+          setCommitState(ws, commitId, 'conflict', JSON.stringify(detail));
+          throw new AppError(
+            'revision_conflict',
+            `Cannot remove ${op.path}: it changed since this revert was planned. Existing bytes were left untouched.`,
+            detail,
+          );
+        }
+        continue;
+      }
       if (current === op.sha256) {
         plan.push({ op, abs, action: 'skip' });
         continue;
@@ -231,6 +294,14 @@ export function applyCommit(ws: Workspace, commitId: string, options: { owner?: 
     for (const entry of plan) {
       if (entry.action === 'skip') {
         skipped.push(entry.op.path);
+        continue;
+      }
+      if (entry.action === 'remove') {
+        // The bytes stay in the content-addressed store; only the path goes.
+        retainRevision(ws, entry.abs);
+        unlinkSync(entry.abs);
+        removeEmptyRecordDir(ws, entry.abs);
+        installed.push(entry.op.path);
         continue;
       }
       retainRevision(ws, entry.abs);

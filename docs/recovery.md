@@ -73,6 +73,46 @@ npm run research -- status --json
 
 Then in Claude Code: `/research-university --resume`.
 
+## Reverting a job
+
+`npm run research -- tasks revert` undoes one finished job and returns its task
+to `pending` so it can run again. It is a dry run until `--apply` is added.
+
+```bash
+npm run research -- tasks revert --job 2 --target <unit-id>            # show the plan
+npm run research -- tasks revert --job 2 --target <unit-id> --apply    # execute it
+npm run research -- tasks revert --task <task-id> --cascade --apply    # dependents first
+```
+
+A revert is itself a commit: it is prepared, locked per target, replayed by
+`reconcile` if interrupted, and recorded in the audit log. What it does:
+
+- **Notes** the job created are removed; notes it changed are restored to the
+  bytes they had before, from the revision store. Removed bytes stay in the
+  store and remain visible through `notes history`.
+- **Records** the job created (programs, people, labs, publications) are
+  deleted with their aliases, relationships and queue rows. Records the job
+  only touched are kept; only the aliases and relationships this job added are
+  removed. A record also written by another task is kept and reported as
+  shared, and its note is left alone.
+- **Sources** are never removed; they are a shared evidence registry.
+- **Tasks** this job queued that never ran are deleted. Dependents that did run
+  (for example Job 4 after a Job 3 revert) need `--cascade`, which reverts them
+  first. The reverted task returns to `pending` with a new fencing token.
+- **Identifiers** are never reused: the re-run allocates fresh ids.
+
+What stops a revert:
+
+- Sent or approved outreach for an affected person. This is never overridden.
+- University discovery once a department selection has been confirmed.
+- A running task, a missing manifest, or a record involved in a merge.
+- A note edited by hand after the job, or changed by a task outside the
+  cascade. `--force` discards those changes; their bytes stay in the revision
+  store.
+
+A failure part-way through a cascade leaves the dependents already reverted;
+the report says which. `data/runs/<run-id>` directories are left on disk.
+
 ## Backups
 
 ```bash
