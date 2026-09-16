@@ -11,6 +11,8 @@ export interface ReadinessIssue {
 export interface EmailReadiness {
   personId: string;
   researchComplete: boolean;
+  /** Research ran, but verification withheld completeness. Not the same as never researched. */
+  researchHeld: boolean;
   emailReady: boolean;
   recipient: string | null;
   contactRule: string;
@@ -61,6 +63,7 @@ export function evaluateEmailReadiness(
     return {
       personId,
       researchComplete: false,
+      researchHeld: false,
       emailReady: false,
       recipient: null,
       contactRule: 'unknown',
@@ -71,10 +74,22 @@ export function evaluateEmailReadiness(
   }
 
   const researchComplete = person.research_complete === 1;
+  let researchHeld = false;
   if (!researchComplete) {
+    // /research-person sets research_complete, and a later verification run can withhold it
+    // again. Those are different situations for the user, so say which one it is
+    // rather than implying the research never ran.
+    const researchTaskDone =
+      (ws.db.get<{ n: number }>(
+        "SELECT COUNT(*) AS n FROM tasks WHERE target_id = ? AND job_kind = 'research_person' AND state = 'complete'",
+        personId,
+      )?.n ?? 0) > 0;
+    researchHeld = researchTaskDone;
     issues.push({
       code: 'research_incomplete',
-      message: 'Job 5 has not marked this profile research_complete.',
+      message: researchTaskDone
+        ? '/research-person finished, but verification withheld research_complete. Resolve the blocking issues the verifier recorded on the profile.'
+        : '/research-person has not marked this profile research_complete.',
       severity: 'blocker',
     });
   }
@@ -176,6 +191,7 @@ export function evaluateEmailReadiness(
   return {
     personId,
     researchComplete,
+    researchHeld,
     emailReady,
     recipient: person.email,
     contactRule,

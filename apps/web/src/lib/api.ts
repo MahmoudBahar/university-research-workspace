@@ -157,6 +157,7 @@ export interface PersonRow {
 export interface Readiness {
   personId: string;
   researchComplete: boolean;
+  researchHeld: boolean;
   emailReady: boolean;
   recipient: string | null;
   contactRule: string;

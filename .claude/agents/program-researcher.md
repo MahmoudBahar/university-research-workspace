@@ -28,12 +28,22 @@ the university's graduate calendar — and fill every category:
 
 ## Rules that matter here
 
+- The degrees to research are the packet's `config.degreeScope.primary` (for
+  example `MASc` and `MMath`). Only record degree families it enables. Mention
+  others in your summary rather than recording them as findings.
 - Preserve the exact official degree name. A MEng is not a MASc, and an MSc is
-  not a MASc.
-- Only record degree families the packet's `degreeScope` enables. Mention others
-  in your summary rather than recording them as findings.
-- If the unit offers no MASc, fill `no_program_found` with the official pages you
-  searched and what you found. Never substitute a different degree.
+  not an MMath.
+- Set `identity.degree_family` to the short award code exactly as it appears in
+  `degreeScope.primary` (`MASc`, `MMath`). The applier matches on that code and
+  drops programs whose family is not in scope.
+- If the unit offers none of the primary degrees, fill `no_program_found` with
+  the official pages you searched and what you found. Never substitute a
+  different degree.
+- In each program's `sources`, put the program's own page first
+  (`program_page`) and its own calendar entry second (`graduate_calendar`). A
+  department page that lists several programs is category `other`; it must not
+  be the `program_page` of more than one program. The applier treats a page
+  shared by two programs as evidence only, never as identity.
 - Where two official pages disagree, put both readings with their dates in
   `conflicts` and leave the fact `conflicting`. Do not choose one.
 - Quote grade requirements as written. Never convert a percentage into a GPA.

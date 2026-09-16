@@ -18,6 +18,9 @@ const ROLE_LABELS: Record<string, string> = {
   administrative_staff: 'Administrative staff',
 };
 
+/** Laboratories listed inline per row before the rest collapse into a link. */
+const LABS_SHOWN = 2;
+
 function blockers(row: PersonRow) {
   return row.readiness.issues.filter((issue) => issue.severity === 'blocker');
 }
@@ -80,7 +83,7 @@ export default function People() {
           emptyState={
             filter.trim() || onlyReady ? undefined : (
               <EmptyState icon={Users} title="No people recorded yet." command="/discover-people">
-                Job 3 discovers faculty for included departments after you confirm a selection.
+                /discover-people finds faculty for included departments after you confirm a selection.
               </EmptyState>
             )
           }
@@ -105,29 +108,51 @@ export default function People() {
             {
               key: 'units',
               header: 'Departments',
-              render: (row) =>
-                row.affiliations.length === 0 ? <span className="muted">—</span> : row.affiliations.map((unit) => unit.display_title).join(', '),
+              render: (row) => {
+                if (row.affiliations.length === 0) return <span className="muted">—</span>;
+                const titles = row.affiliations.map((unit) => unit.display_title).join(', ');
+                return (
+                  <span className="cell-truncate" title={titles}>
+                    {titles}
+                  </span>
+                );
+              },
             },
             {
               key: 'labs',
               header: 'Laboratories',
-              render: (row) =>
-                row.labs.length === 0 ? (
-                  <span className="muted">—</span>
-                ) : (
-                  row.labs.map((lab) => (
-                    <div key={lab.lab_id}>
-                      <AppLink to={`/labs/${lab.lab_id}`}>{lab.display_title}</AppLink>
-                      {lab.rel_type === 'directs_lab' ? ' (director)' : ''}
-                    </div>
-                  ))
-                ),
+              render: (row) => {
+                if (row.labs.length === 0) return <span className="muted">—</span>;
+                // A person with many affiliations would otherwise stretch the row far
+                // taller than every other one. The person page lists them all.
+                const shown = row.labs.slice(0, LABS_SHOWN);
+                const hidden = row.labs.length - shown.length;
+                return (
+                  <>
+                    {shown.map((lab) => (
+                      <div key={lab.lab_id} className="cell-truncate" title={lab.display_title}>
+                        <AppLink to={`/labs/${lab.lab_id}`}>{lab.display_title}</AppLink>
+                        {lab.rel_type === 'directs_lab' ? ' (director)' : ''}
+                      </div>
+                    ))}
+                    {hidden > 0 ? (
+                      <div className="small muted">
+                        <AppLink to={`/people/${row.entity_id}`}>+{hidden} more</AppLink>
+                      </div>
+                    ) : null}
+                  </>
+                );
+              },
             },
             {
               key: 'research',
               header: 'Research',
               sortValue: (row) => row.research_complete,
-              render: (row) => <Pill tone={row.research_complete ? 'ok' : 'default'}>{row.research_complete ? 'complete' : 'pending'}</Pill>,
+              render: (row) => (
+                <Pill tone={row.research_complete ? 'ok' : row.readiness.researchHeld ? 'warn' : 'default'}>
+                  {row.research_complete ? 'complete' : row.readiness.researchHeld ? 'held' : 'not started'}
+                </Pill>
+              ),
             },
             {
               key: 'email',

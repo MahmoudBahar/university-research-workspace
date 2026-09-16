@@ -11,6 +11,7 @@ import {
   enqueueScopedWork,
   enqueueTask,
   failTask,
+  findTaskForRevert,
   getScopeForUniversity,
   getTask,
   jobKindForNumber,
@@ -20,6 +21,7 @@ import {
   refreshAllTaskStates,
   renewLease,
   retryTask,
+  revertTask,
   saveCheckpoint,
   scopeSummary,
   startUniversityResearch,
@@ -415,6 +417,66 @@ export const researchCommands: Record<string, CommandSpec> = {
       const ws = await ctx.workspace();
       cancelTask(ws, requireFlag(ctx.args, 'task'), requireFlag(ctx.args, 'reason'));
       emit(ctx.out, 'Task cancelled.', { cancelled: true });
+    },
+  },
+
+  'tasks revert': {
+    summary: 'Undo a finished job: remove or restore its notes, delete the records it created, and return the task to pending. Dry run unless --apply.',
+    usage: 'tasks revert (--task <id> | --job <1-7|kind> --target <id>) [--cascade] [--apply] [--force] [--json]',
+    handler: async (ctx) => {
+      const ws = await ctx.workspace();
+      let taskId = flagString(ctx.args, 'task');
+      if (!taskId) {
+        const jobKind = resolveJobKind(flagString(ctx.args, 'job'));
+        const targetId = flagString(ctx.args, 'target');
+        if (!jobKind || !targetId) throw new Error('Provide --task <id>, or --job <1-7|kind> together with --target <entity-id>.');
+        taskId = findTaskForRevert(ws, jobKind, targetId).id;
+      }
+      const apply = flagBool(ctx.args, 'apply');
+      const report = revertTask(ws, taskId, {
+        cascade: flagBool(ctx.args, 'cascade'),
+        force: flagBool(ctx.args, 'force'),
+        apply,
+        actor: 'user',
+      });
+      const lines: string[] = [];
+      for (const step of report.plan.order) {
+        lines.push(`${step.jobKind} for ${step.targetTitle ?? step.targetId} (${step.taskId}) — ${step.commits.length} commit(s)${step.deleteAfter ? ', task row deleted' : ', task returns to pending'}`);
+        for (const file of step.files) lines.push(`  ${file.action === 'remove' ? 'remove ' : 'restore'} ${file.path}`);
+        for (const entity of step.entitiesDeleted) lines.push(`  delete  ${entity.id} — ${entity.title}`);
+        for (const entity of step.entitiesKept) lines.push(`  keep    ${entity.id} — ${entity.title} (${entity.reason})`);
+        for (const alias of step.aliasesRemoved) lines.push(`  unlink  ${alias.entityId} ${alias.anchorKind}=${alias.anchorValue}`);
+        for (const rel of step.relationshipsRemoved) lines.push(`  unlink  ${rel.fromId} —${rel.relType}→ ${rel.toId}`);
+        for (const personId of step.peopleReset) lines.push(`  reset   ${personId} research fields`);
+        for (const outreachId of step.outreachRemoved) lines.push(`  remove  draft ${outreachId}`);
+        for (const t of step.tasksDeleted) lines.push(`  delete  task ${t.id} (${t.jobKind} for ${t.targetId})`);
+        for (const note of step.notes) lines.push(`  note    ${note}`);
+      }
+      if (report.plan.dependentsNeedingCascade.length > 0) {
+        lines.push('', 'Dependent tasks have committed results; add --cascade to revert them first:');
+        for (const t of report.plan.dependentsNeedingCascade) lines.push(`  ${t.id} (${t.jobKind} for ${t.targetId})`);
+      }
+      if (report.plan.conflicts.length > 0) {
+        lines.push('', `Files changed since the job ran${report.plan.force ? ' (overridden by --force)' : '; add --force to discard those changes'}:`);
+        for (const c of report.plan.conflicts) lines.push(`  ${c.path} — ${c.reason}`);
+      }
+      if (report.plan.blockers.length > 0) {
+        lines.push('', 'Blocked:');
+        for (const b of report.plan.blockers) lines.push(`  [${b.code}] ${b.message}`);
+      }
+      if (report.applied) {
+        lines.push(
+          '',
+          `Reverted ${report.commits.length} task(s): ${report.filesRemoved.length} file(s) removed, ${report.filesRestored.length} restored, ${report.entitiesDeleted.length} record(s) deleted, ${report.tasksReset.length} task(s) back to pending, ${report.tasksDeleted.length} task(s) deleted.`,
+        );
+        if (report.danglingLinks > 0) lines.push(`verify-links now reports ${report.danglingLinks} problem(s); run it for details.`);
+        if (report.rerun) lines.push(`Re-run with: ${report.rerun}`);
+      } else if (report.plan.applicable) {
+        lines.push('', 'Dry run: nothing was changed. Add --apply to execute this plan.');
+      } else {
+        lines.push('', 'Nothing was changed.');
+      }
+      emit(ctx.out, lines, report);
     },
   },
 

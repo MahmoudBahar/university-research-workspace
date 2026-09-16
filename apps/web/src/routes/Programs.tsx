@@ -59,7 +59,7 @@ export default function Programs() {
         <h2>Programs</h2>
         <p className="lede">
           Program facts as recorded, with the academic year or intake they apply to. Exact official degree names are kept
-          verbatim; nothing is substituted when no MASc exists.
+          verbatim; nothing is substituted when none of the configured primary degrees exists.
         </p>
       </header>
 
@@ -76,12 +76,12 @@ export default function Programs() {
         <DataTable
           rows={rows}
           rowKey={(row) => row.id}
-          empty="No programs recorded yet. Job 2 runs for included units after you confirm a selection."
+          empty="No programs recorded yet. /research-programs runs for included units after you confirm a selection."
           loading={programs.loading}
           emptyState={
             filter.trim() ? undefined : (
               <EmptyState icon={GraduationCap} title="No programs recorded yet." command="/research-programs">
-                Job 2 runs for included units after you confirm a selection.
+                /research-programs runs for included units after you confirm a selection.
               </EmptyState>
             )
           }

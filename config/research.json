@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "degreeScope": {
-    "primary": ["MASc"],
+    "primary": ["MASc", "MMath"],
     "related": ["MSc", "MEng", "MRes"],
     "allowRelated": false
   },

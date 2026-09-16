@@ -155,7 +155,7 @@ their role and source. Only the *follow-up research* is capped, by
 
 ```json
 {
-  "degreeScope":  { "primary": ["MASc"], "related": ["MSc","MEng"], "allowRelated": false },
+  "degreeScope":  { "primary": ["MASc", "MMath"], "related": ["MSc","MEng"], "allowRelated": false },
   "concurrency":  { "candidates": 1, "totalWorkers": 4 },
   "research":     { "publicationInventory": "all_in_scope", "paperSummaryMode": "all_accessible",
                     "expansionBudgetPerRun": 5, "requireVerifier": true },

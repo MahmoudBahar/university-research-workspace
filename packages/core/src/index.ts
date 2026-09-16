@@ -43,6 +43,7 @@ export * from './util/universityFilter.js';
 
 export * from './tasks/definitions.js';
 export * from './tasks/queue.js';
+export * from './tasks/revert.js';
 
 export * from './commit/manifest.js';
 export * from './commit/commit.js';

@@ -47,6 +47,7 @@ npm run research -- tasks claim --owner <id> [--job 1-7] [--target <id>]
 npm run research -- tasks checkpoint --task <id> --owner <id> --token <n> --kind <kind>
 npm run research -- tasks complete --task <id> --owner <id> --token <n>
 npm run research -- tasks fail --task <id> --owner <id> --token <n> --error "..."
+npm run research -- tasks revert --job <1-7> --target <id> [--cascade] [--apply]   # dry run until --apply
 npm run research -- drafts validate|show|approve|return|archive --draft <id>
 npm run research -- send-plan set --draft <id> --date YYYY-MM-DD --time HH:MM
 npm run research -- mark-sent --draft <id> --key <idempotency-key>

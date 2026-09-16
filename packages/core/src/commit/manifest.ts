@@ -1,20 +1,34 @@
 export interface FileOp {
   /** Workspace-root-relative posix path of the file this op installs. */
   path: string;
-  /** File name inside the commit's staged directory. */
+  /** File name inside the commit's staged directory; empty for a removal. */
   staged: string;
+  /** Hash of the installed bytes; empty for a removal. */
   sha256: string;
   size: number;
   /** Hash the file must currently have. `null` means "must not exist yet". */
   expectedPriorSha256: string | null;
+  /** Remove the file instead of installing one. Prior bytes are retained first. */
+  remove?: true;
   entityId?: string;
   noteType?: string;
-  source: 'worker' | 'core' | 'user';
+  source: 'worker' | 'core' | 'user' | 'revert';
 }
 
 export type DbOpKind =
   | 'entity.upsert'
   | 'entity.alias'
+  | 'entity.delete'
+  | 'alias.delete'
+  | 'relationship.delete'
+  | 'person_source.delete'
+  | 'person.reset'
+  | 'outreach.delete'
+  | 'note.forget'
+  | 'discovery.delete'
+  | 'task.reset'
+  | 'task.delete'
+  | 'commit.state'
   | 'university.upsert'
   | 'unit.upsert'
   | 'unit.parent'
@@ -57,4 +71,4 @@ export interface CommitManifest {
   dbOps: DbOp[];
 }
 
-export type CommitState = 'prepared' | 'applying' | 'committed' | 'conflict' | 'rolled_back';
+export type CommitState = 'prepared' | 'applying' | 'committed' | 'conflict' | 'rolled_back' | 'reverted';

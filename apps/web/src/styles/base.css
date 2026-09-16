@@ -70,8 +70,20 @@ th, td { text-align: left; padding: 0.55rem 0.6rem; border-bottom: 1px solid var
 th { font-weight: 600; color: var(--muted); font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; }
 tbody tr:hover { background: var(--bg-subtle); }
 tbody tr:last-child td { border-bottom-color: transparent; }
-.table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+/* Vertical overflow stays hidden: rows animate in from a few pixels below,
+   and an auto vertical axis would show a scrollbar for the length of that animation. */
+.table-scroll { overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; }
 table.dense th, table.dense td { padding: 0.35rem 0.5rem; }
+/* Institution names run long ("… group, University of Waterloo"). Left to wrap,
+   one cell sets the height of every column in its row. One line each, with the
+   full name on hover and on the record's own page. */
+.cell-truncate {
+  display: block;
+  max-width: 11rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 th .th-sort {
   all: unset;
   cursor: pointer;
@@ -134,3 +146,11 @@ pre.body-preview { white-space: pre-wrap; word-break: break-word; }
 .meta-list dt { color: var(--muted); font-size: var(--text-xs); text-transform: uppercase; letter-spacing: 0.04em; margin-top: var(--space-3); font-weight: 600; }
 .meta-list dt:first-child { margin-top: 0; }
 .meta-list dd { margin: 0.15rem 0 0; word-break: break-word; }
+
+/* The readiness notices sit directly under the last definition-list value, which
+   reads as though they belong to it. Give them their own breathing room. */
+.issue-block { margin-top: var(--space-4); }
+
+/* An explanatory line under a value pill needs a gap, or it reads as a caption
+   glued to the pill rather than a sentence about the field. */
+.dd-note { margin-top: var(--space-2); font-size: var(--text-sm); color: var(--muted); }

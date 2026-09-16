@@ -198,7 +198,7 @@ export function computeBlockers(ws: Workspace, task: TaskRow): Blocker[] {
       if ((affiliations?.n ?? 0) === 0) {
         blockers.push({
           code: 'person_identity_incomplete',
-          message: 'This person has no recorded affiliation. Run Job 3 for the relevant unit, or supply the affiliation directly.',
+          message: 'This person has no recorded affiliation. Run /discover-people for the relevant unit, or supply the affiliation directly.',
         });
       }
       break;
@@ -213,7 +213,7 @@ export function computeBlockers(ws: Workspace, task: TaskRow): Blocker[] {
         if ((sources?.n ?? 0) === 0) {
           blockers.push({
             code: 'source_map_missing',
-            message: 'Job 4 has not produced a source map for this person yet.',
+            message: '/map-person has not produced a source map for this person yet.',
           });
         }
       }
@@ -225,7 +225,7 @@ export function computeBlockers(ws: Workspace, task: TaskRow): Blocker[] {
         task.target_id,
       );
       if ((researched?.n ?? 0) === 0) {
-        blockers.push({ code: 'research_missing', message: 'There is nothing to verify until Job 5 has produced material.' });
+        blockers.push({ code: 'research_missing', message: 'There is nothing to verify until /research-person has produced material.' });
       }
       break;
     }
