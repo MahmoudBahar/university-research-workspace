@@ -160,9 +160,10 @@ export function buildContextPacket(ws: Workspace, taskId: string): ContextPacket
       inputs['unitNote'] = noteExcerpt(ws, canonicalPathFor('unit', unit.id) as string);
       inputs['degreeScope'] = ws.config.degreeScope;
       if (task.job_kind === 'research_programs') {
-        const primary = ws.config.degreeScope.primary.join(', ') || '(none configured)';
+        const { primary, related, allowRelated } = ws.config.degreeScope;
+        const families = [...primary, ...(allowRelated ? related : [])].join(', ') || '(none configured)';
         instructions.push(
-          `Preserve exact official degree names. The primary degree families in scope are ${primary}; record degree_family as the short award code exactly as listed. Do not substitute a different degree when none of them exists.`,
+          `Preserve exact official degree names. The degree families in scope are ${families}; record degree_family as the short award code exactly as listed. Do not substitute a different degree when none of them exists.`,
         );
         instructions.push(
           'List each program’s own page or calendar entry first in its sources. A department page that lists several programs is category "other", never "program_page".',

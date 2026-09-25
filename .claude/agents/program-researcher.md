@@ -29,13 +29,15 @@ the university's graduate calendar — and fill every category:
 ## Rules that matter here
 
 - The degrees to research are the packet's `config.degreeScope.primary` (for
-  example `MASc` and `MMath`). Only record degree families it enables. Mention
-  others in your summary rather than recording them as findings.
+  example `MASc` and `MMath`), plus `config.degreeScope.related` when
+  `config.degreeScope.allowRelated` is true. Mention any other degree families
+  in your summary rather than recording them as findings.
 - Preserve the exact official degree name. A MEng is not a MASc, and an MSc is
   not an MMath.
 - Set `identity.degree_family` to the short award code exactly as it appears in
-  `degreeScope.primary` (`MASc`, `MMath`). The applier matches on that code and
-  drops programs whose family is not in scope.
+  `degreeScope.primary` or, when enabled, `degreeScope.related` (`MASc`,
+  `MMath`, `MSc`). The applier matches on that code and drops programs whose
+  family is not in scope.
 - If the unit offers none of the primary degrees, fill `no_program_found` with
   the official pages you searched and what you found. Never substitute a
   different degree.

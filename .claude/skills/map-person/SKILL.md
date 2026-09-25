@@ -73,8 +73,9 @@ retryable ones are attempted again, through the browser this time.
 - If Scholar is blocked or unavailable, record that outcome and continue with
   official bibliographies, repositories and publisher pages. Never record a
   blocked profile as inspected. No browser in the session means
-  `needs_browser`; a challenge page means `captcha` or `blocked`, and the
-  worker stops using that host for the run.
+  `needs_browser`. A challenge page from the plain fetch is a reason to try the
+  browser; a challenge page in the browser means `captcha` or `blocked`, and
+  the worker stops using that host for the run.
 - List the categories where you found nothing in `absent_categories`. An empty
   category is a finding.
 - The institutional location is a professional location. It is the basis for a
