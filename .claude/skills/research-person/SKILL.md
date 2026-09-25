@@ -35,15 +35,14 @@ the limit.
    While `fetching.browserAllowed` is on, this job uses the user's one browser
    for Scholar and similar hosts, so run one candidate at a time regardless of
    `--parallel`.
-4. Instruct it to checkpoint as it goes:
-   `npm run research -- tasks checkpoint --task <id> --owner <owner> --token <n> --kind source|section|paper --label "<what>"`
-   A run that dies keeps its checkpoints, and the next run resumes from them.
-5. When `result.json` exists, run the verifier if
+   The worker checkpoints after each source, section and paper on its own; a
+   run that dies keeps its checkpoints, and the next run resumes from them.
+4. When `result.json` exists, run the verifier if
    `research.requireVerifier` is enabled: claim the `verify_person` task, launch
    the `verifier` subagent with the Agent tool (`subagent_type: verifier`,
    `description: verify_person <person-id>`, the same prompt shape with that
    task's packet), then complete the verify task.
-6. `npm run research -- tasks complete --task <id> --owner <owner> --token <n> --json`
+5. `npm run research -- tasks complete --task <id> --owner <owner> --token <n> --json`
 
 ## What the profile must cover
 

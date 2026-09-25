@@ -48,6 +48,16 @@ browser is connected, suggest `/map-person --retry-blocked`. If no browser is
 connected, say that Scholar and other JavaScript-only pages will keep being
 recorded as `needs_browser` until the Claude in Chrome extension is running.
 
+### Checks for the user to clear
+
+Rows with `access_status` `captcha` or `blocked` stopped at a check that only
+the user can pass. List them grouped by person: name, person id, source
+category and the full `url` from the JSON (not a shortened one). Tell the user
+to open each URL in their Chrome, complete the check themselves, then run
+`/map-person <person-id> --retry-blocked` for that person. Do not open these
+pages or attempt the checks yourself. Leave `rate_limited` rows out of this
+list; they clear on their own and are retried with the rest.
+
 ## Report
 
 Structure the answer as:
@@ -62,7 +72,8 @@ Structure the answer as:
    planned times have passed. Say plainly that a passed time means nothing was
    sent.
 5. **Data health** — open note issues, duplicate candidates, incomplete commits.
-6. **Retrieval** — browser connected or not, sources waiting for one.
+6. **Retrieval** — browser connected or not, sources waiting for one, and the
+   checks waiting for the user to clear, with their URLs.
 7. **What to run next** — the exact command.
 
 ## Things to say honestly
