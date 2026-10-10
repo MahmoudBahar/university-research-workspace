@@ -1163,15 +1163,16 @@ export function applyPersonResearch(ws: Workspace, task: TaskRow, result: Person
 
   const supervisionCaution =
     'An email may ask about availability; it must not claim a funded opening exists. An active lab page, a recent paper, or an open position elsewhere is not evidence of a place.';
+  const supervisionCell = (value: string) => value.replace(/\s*\n\s*/g, ' ').replace(/\|/g, '\\|').trim();
   const supervisionTable =
     result.supervision.length === 0
       ? `No public statement about supervision availability was found. ${supervisionCaution}`
       : [
-          `| Program | Availability | Checked | Source |`,
-          `| --- | --- | --- | --- |`,
+          `| Program | Availability | Statement | Checked | Source |`,
+          `| --- | --- | --- | --- | --- |`,
           ...result.supervision.map(
             (item) =>
-              `| ${item.program_title ?? item.program_id ?? 'Unspecified'} | ${item.availability} | ${item.checked_at ?? '—'} | ${item.source_url ?? '—'} |`,
+              `| ${supervisionCell(item.program_title ?? item.program_id ?? 'Unspecified')} | ${item.availability} | ${item.note ? supervisionCell(item.note) : '—'} | ${item.checked_at ?? '—'} | ${item.source_url ?? '—'} |`,
           ),
           '',
           result.supervision.every((item) => item.availability === 'accepting') ? '' : supervisionCaution,
