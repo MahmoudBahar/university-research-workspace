@@ -19,6 +19,8 @@ import type {
 export const UNIVERSITY_NAME = 'Northvale Institute of Technology';
 export const UNIVERSITY_DOMAIN = 'northvale.invalid';
 const base = `https://www.${UNIVERSITY_DOMAIN}`;
+/** Checks happened a few days before the test runs, so freshness limits never age the fixtures out. */
+const CHECKED = new Date(Date.now() - 3 * 86_400_000).toISOString().slice(0, 10);
 
 export function universityDiscovery(): UniversityDiscoveryResult {
   return {
@@ -34,8 +36,8 @@ export function universityDiscovery(): UniversityDiscoveryResult {
         'Northvale Institute of Technology is a fictional institution used to exercise this workspace. It has two campuses and three faculties.',
       discovery_gaps: ['The Harbourside campus directory was not paginated beyond page 2 during this run.'],
       sources: [
-        { url: `${base}/about`, category: 'other', title: 'About Northvale', access_status: 'accessible', fetch_method: 'web_fetch', observed_at: '2026-09-10' },
-        { url: `${base}/faculties`, category: 'other', title: 'Faculties and schools', access_status: 'accessible', fetch_method: 'web_fetch', observed_at: '2026-09-10' },
+        { url: `${base}/about`, category: 'other', title: 'About Northvale', access_status: 'accessible', fetch_method: 'web_fetch', observed_at: CHECKED },
+        { url: `${base}/faculties`, category: 'other', title: 'Faculties and schools', access_status: 'accessible', fetch_method: 'web_fetch', observed_at: CHECKED },
       ],
     },
     units: [
@@ -51,7 +53,7 @@ export function universityDiscovery(): UniversityDiscoveryResult {
         themes: ['Systems engineering', 'Materials'],
         graduate_offerings: ['MASc', 'MEng', 'PhD'],
         discovery_gaps: [],
-        sources: [{ url: `${base}/engineering`, category: 'other', access_status: 'accessible', fetch_method: 'web_fetch', observed_at: '2026-09-10' }],
+        sources: [{ url: `${base}/engineering`, category: 'other', access_status: 'accessible', fetch_method: 'web_fetch', observed_at: CHECKED }],
       },
       {
         key: 'ece',
@@ -70,7 +72,7 @@ export function universityDiscovery(): UniversityDiscoveryResult {
         themes: ['Signal processing', 'Embedded systems', 'Photonics'],
         graduate_offerings: ['MASc in Electrical and Computer Engineering'],
         discovery_gaps: ['Adjunct faculty are listed on a separate page that returned 403 during this run.'],
-        sources: [{ url: `${base}/engineering/ece`, category: 'department_directory', access_status: 'accessible', fetch_method: 'web_fetch', observed_at: '2026-09-10' }],
+        sources: [{ url: `${base}/engineering/ece`, category: 'department_directory', access_status: 'accessible', fetch_method: 'web_fetch', observed_at: CHECKED }],
       },
       {
         key: 'mech',
@@ -84,7 +86,7 @@ export function universityDiscovery(): UniversityDiscoveryResult {
         themes: ['Thermofluids', 'Robotics'],
         graduate_offerings: ['MASc in Mechanical Engineering'],
         discovery_gaps: [],
-        sources: [{ url: `${base}/engineering/mech`, category: 'department_directory', access_status: 'accessible', fetch_method: 'web_fetch', observed_at: '2026-09-10' }],
+        sources: [{ url: `${base}/engineering/mech`, category: 'department_directory', access_status: 'accessible', fetch_method: 'web_fetch', observed_at: CHECKED }],
       },
       {
         key: 'arts',
@@ -98,7 +100,7 @@ export function universityDiscovery(): UniversityDiscoveryResult {
         themes: ['Literature'],
         graduate_offerings: ['MA'],
         discovery_gaps: [],
-        sources: [{ url: `${base}/arts`, category: 'other', access_status: 'accessible', fetch_method: 'web_fetch', observed_at: '2026-09-10' }],
+        sources: [{ url: `${base}/arts`, category: 'other', access_status: 'accessible', fetch_method: 'web_fetch', observed_at: CHECKED }],
       },
       {
         key: 'photonics',
@@ -112,7 +114,7 @@ export function universityDiscovery(): UniversityDiscoveryResult {
         themes: ['Integrated photonics'],
         graduate_offerings: [],
         discovery_gaps: [],
-        sources: [{ url: `${base}/photonics`, category: 'other', access_status: 'accessible', fetch_method: 'web_fetch', observed_at: '2026-09-10' }],
+        sources: [{ url: `${base}/photonics`, category: 'other', access_status: 'accessible', fetch_method: 'web_fetch', observed_at: CHECKED }],
       },
     ],
     ambiguity_candidates: [],
@@ -177,12 +179,12 @@ export function programResearch(unitId: string): ProgramResearchResult {
         open_questions: ['Whether part-time study is available for international applicants was not stated.'],
         conflicts: ['The department page says 24 months; the calendar says "normally two years". Both are recorded.'],
         evidence: [
-          { claim: 'IELTS 7.0 overall, no band below 6.5', url: `${base}/engineering/ece/graduate`, status: 'confirmed', checked_at: '2026-09-10' },
-          { claim: 'Funding is not guaranteed', url: `${base}/engineering/ece/funding`, status: 'confirmed', checked_at: '2026-09-10' },
+          { claim: 'IELTS 7.0 overall, no band below 6.5', url: `${base}/engineering/ece/graduate`, status: 'confirmed', checked_at: CHECKED },
+          { claim: 'Funding is not guaranteed', url: `${base}/engineering/ece/funding`, status: 'confirmed', checked_at: CHECKED },
         ],
         sources: [
-          { url: `${base}/engineering/ece/graduate`, category: 'program_page', access_status: 'accessible', fetch_method: 'web_fetch', observed_at: '2026-09-10' },
-          { url: `${base}/calendar/2026/ece-masc`, category: 'graduate_calendar', access_status: 'accessible', fetch_method: 'web_fetch', observed_at: '2026-09-10' },
+          { url: `${base}/engineering/ece/graduate`, category: 'program_page', access_status: 'accessible', fetch_method: 'web_fetch', observed_at: CHECKED },
+          { url: `${base}/calendar/2026/ece-masc`, category: 'graduate_calendar', access_status: 'accessible', fetch_method: 'web_fetch', observed_at: CHECKED },
         ],
       },
     ],
@@ -213,7 +215,7 @@ export function peopleDiscovery(unitId: string): PeopleDiscoveryResult {
         graduate_supervision_evidence: 'Listed on the fictional graduate faculty page',
         contact_suitability_evidence: 'Profile publishes a departmental address for research enquiries',
         relationships: [],
-        sources: [{ url: `${base}/engineering/ece/people/aosei`, category: 'official_profile', access_status: 'accessible', fetch_method: 'web_fetch', observed_at: '2026-09-10' }],
+        sources: [{ url: `${base}/engineering/ece/people/aosei`, category: 'official_profile', access_status: 'accessible', fetch_method: 'web_fetch', observed_at: CHECKED }],
       },
       {
         full_name: 'Dr Ruben Kaltsas',
@@ -225,7 +227,7 @@ export function peopleDiscovery(unitId: string): PeopleDiscoveryResult {
         research_themes: ['Embedded systems'],
         identity_confidence: 'verified',
         relationships: [],
-        sources: [{ url: `${base}/engineering/ece/people/rkaltsas`, category: 'official_profile', access_status: 'accessible', fetch_method: 'web_fetch', observed_at: '2026-09-10' }],
+        sources: [{ url: `${base}/engineering/ece/people/rkaltsas`, category: 'official_profile', access_status: 'accessible', fetch_method: 'web_fetch', observed_at: CHECKED }],
       },
       {
         full_name: 'Priya Raman',
@@ -237,7 +239,7 @@ export function peopleDiscovery(unitId: string): PeopleDiscoveryResult {
         identity_confidence: 'probable',
         contact_suitability_evidence: 'No public statement about contacting this person about supervision',
         relationships: [{ to_name: 'Dr Amara Osei', rel_type: 'works_with', role: 'research assistant', evidence_status: 'confirmed', source_url: `${base}/engineering/ece/people/praman` }],
-        sources: [{ url: `${base}/engineering/ece/people/praman`, category: 'official_profile', access_status: 'accessible', fetch_method: 'web_fetch', observed_at: '2026-09-10' }],
+        sources: [{ url: `${base}/engineering/ece/people/praman`, category: 'official_profile', access_status: 'accessible', fetch_method: 'web_fetch', observed_at: CHECKED }],
       },
       {
         full_name: 'Dr Lena Fournier',
@@ -249,7 +251,7 @@ export function peopleDiscovery(unitId: string): PeopleDiscoveryResult {
         research_themes: ['Integrated photonics'],
         identity_confidence: 'verified',
         relationships: [],
-        sources: [{ url: `${base}/engineering/ece/people/lfournier`, category: 'official_profile', access_status: 'accessible', fetch_method: 'web_fetch', observed_at: '2026-09-10' }],
+        sources: [{ url: `${base}/engineering/ece/people/lfournier`, category: 'official_profile', access_status: 'accessible', fetch_method: 'web_fetch', observed_at: CHECKED }],
       },
     ],
     coverage: {
@@ -275,7 +277,7 @@ export function sourceMap(personId: string): SourceMapResult {
         discovery_source: 'Department directory',
         identity_confidence: 'verified',
         access_status: 'accessible', fetch_method: 'web_fetch',
-        last_attempt_at: '2026-09-10',
+        last_attempt_at: CHECKED,
         title: 'Dr Amara Osei — Northvale ECE',
       },
       {
@@ -284,7 +286,7 @@ export function sourceMap(personId: string): SourceMapResult {
         discovery_source: 'Link from official profile',
         identity_confidence: 'verified',
         access_status: 'accessible', fetch_method: 'web_fetch',
-        last_attempt_at: '2026-09-10',
+        last_attempt_at: CHECKED,
         title: 'Northvale Signal Systems Laboratory',
       },
       {
@@ -293,7 +295,7 @@ export function sourceMap(personId: string): SourceMapResult {
         discovery_source: 'Lab site navigation',
         identity_confidence: 'verified',
         access_status: 'accessible', fetch_method: 'web_fetch',
-        last_attempt_at: '2026-09-10',
+        last_attempt_at: CHECKED,
       },
       {
         url: 'https://orcid.invalid/0000-0002-1825-0097',
@@ -301,7 +303,7 @@ export function sourceMap(personId: string): SourceMapResult {
         discovery_source: 'ORCID stated on official profile',
         identity_confidence: 'verified',
         access_status: 'accessible', fetch_method: 'web_fetch',
-        last_attempt_at: '2026-09-10',
+        last_attempt_at: CHECKED,
       },
       {
         url: 'https://scholar.invalid/citations?user=EXAMPLE',
@@ -309,7 +311,7 @@ export function sourceMap(personId: string): SourceMapResult {
         discovery_source: 'Search',
         identity_confidence: 'uncertain',
         access_status: 'blocked', fetch_method: 'web_fetch',
-        last_attempt_at: '2026-09-10',
+        last_attempt_at: CHECKED,
         note: 'The fictional Scholar mirror returned a challenge page. It was not inspected.',
       },
       {
@@ -318,7 +320,7 @@ export function sourceMap(personId: string): SourceMapResult {
         discovery_source: 'ORCID works list',
         identity_confidence: 'verified',
         access_status: 'accessible', fetch_method: 'web_fetch',
-        last_attempt_at: '2026-09-10',
+        last_attempt_at: CHECKED,
       },
       {
         url: 'https://doi.invalid/10.5555/northvale.2024.077',
@@ -326,7 +328,7 @@ export function sourceMap(personId: string): SourceMapResult {
         discovery_source: 'ORCID works list',
         identity_confidence: 'verified',
         access_status: 'auth_required', fetch_method: 'web_fetch',
-        last_attempt_at: '2026-09-10',
+        last_attempt_at: CHECKED,
         note: 'Publisher page requires a subscription; only the abstract is public.',
       },
     ],
@@ -366,7 +368,7 @@ export function personResearch(personId: string, options: { programId?: string; 
           name: 'Harbourside acoustic testbed',
           description: 'A fictional multi-year deployment described on the lab site.',
           evidence_status: 'confirmed',
-          observed_at: '2026-09-10',
+          observed_at: CHECKED,
           source_url: 'https://osei-lab.invalid/projects',
         },
       ],
@@ -387,7 +389,7 @@ export function personResearch(personId: string, options: { programId?: string; 
             program_id: options.programId,
             program_title: 'Master of Applied Science in Electrical and Computer Engineering',
             availability: 'no_public_information',
-            checked_at: '2026-09-10',
+            checked_at: CHECKED,
             source_url: 'https://osei-lab.invalid/prospective-students',
             note: 'The prospective-students page invites enquiries but does not say whether places are available.',
           },
@@ -454,14 +456,14 @@ export function personResearch(personId: string, options: { programId?: string; 
       required_subject: 'MASc enquiry',
       requested_documents: ['One-page CV'],
       contact_rule: 'email_ok',
-      checked_at: '2026-09-10',
+      checked_at: CHECKED,
       source_url: 'https://osei-lab.invalid/prospective-students',
     },
     location: {
       institutional_location: 'Northvale main campus, Fictionland',
       timezone: 'America/Toronto',
       timezone_basis: 'campus_inferred',
-      observed_at: '2026-09-10',
+      observed_at: CHECKED,
     },
     applicant_connections: {
       connections: ['The applicant profile records estimation coursework that overlaps with the 2025 paper.'],
@@ -470,10 +472,10 @@ export function personResearch(personId: string, options: { programId?: string; 
     },
     evidence: {
       sources: [
-        { url: `${base}/engineering/ece/people/aosei`, category: 'official_profile', access_status: 'accessible', fetch_method: 'web_fetch', observed_at: '2026-09-10' },
-        { url: 'https://osei-lab.invalid/', category: 'lab_page', access_status: 'accessible', fetch_method: 'web_fetch', observed_at: '2026-09-10' },
-        { url: 'https://osei-lab.invalid/prospective-students', category: 'recruitment_page', access_status: 'accessible', fetch_method: 'web_fetch', observed_at: '2026-09-10' },
-        { url: 'https://scholar.invalid/citations?user=EXAMPLE', category: 'scholar', access_status: 'blocked', fetch_method: 'web_fetch', observed_at: '2026-09-10', notes: 'Challenge page; not inspected.' },
+        { url: `${base}/engineering/ece/people/aosei`, category: 'official_profile', access_status: 'accessible', fetch_method: 'web_fetch', observed_at: CHECKED },
+        { url: 'https://osei-lab.invalid/', category: 'lab_page', access_status: 'accessible', fetch_method: 'web_fetch', observed_at: CHECKED },
+        { url: 'https://osei-lab.invalid/prospective-students', category: 'recruitment_page', access_status: 'accessible', fetch_method: 'web_fetch', observed_at: CHECKED },
+        { url: 'https://scholar.invalid/citations?user=EXAMPLE', category: 'scholar', access_status: 'blocked', fetch_method: 'web_fetch', observed_at: CHECKED, notes: 'Challenge page; not inspected.' },
       ],
       verification: [{ claim: 'Recipient address', status: 'confirmed', note: 'Matches the official profile page.' }],
       coverage: ['Google Scholar could not be inspected; the bibliography comes from ORCID and publisher pages.'],
@@ -506,7 +508,7 @@ export function labResearch(unitId?: string): LabResearchResult {
       collaborations: ['Northvale Institute for Photonic Systems'],
       recruitment: {
         text: 'The lab page invites enquiries from prospective MASc students but does not state that funded places exist.',
-        observed_at: '2026-09-10',
+        observed_at: CHECKED,
         source_url: 'https://osei-lab.invalid/prospective-students',
       },
       contact_instructions: 'Enquiries by email with "MASc enquiry" in the subject.',
@@ -516,16 +518,16 @@ export function labResearch(unitId?: string): LabResearchResult {
       overview: 'A fictional laboratory directed by Dr Amara Osei.',
     },
     members: [
-      { full_name: 'Dr Amara Osei', role: 'Director', role_category: 'associate_professor', status: 'current', is_director: true, profile_url: `${base}/engineering/ece/people/aosei`, source_url: 'https://osei-lab.invalid/people', observed_at: '2026-09-10' },
-      { full_name: 'Priya Raman', role: 'Research assistant', role_category: 'research_assistant', status: 'current', is_director: false, profile_url: `${base}/engineering/ece/people/praman`, source_url: 'https://osei-lab.invalid/people', observed_at: '2026-09-10' },
-      { full_name: 'Tomas Bergqvist', role: 'PhD student', role_category: 'graduate_student', status: 'current', is_director: false, source_url: 'https://osei-lab.invalid/people', observed_at: '2026-09-10' },
-      { full_name: 'Hana Bright', role: 'MASc student', role_category: 'graduate_student', status: 'former', is_director: false, source_url: 'https://osei-lab.invalid/alumni', observed_at: '2026-09-10' },
+      { full_name: 'Dr Amara Osei', role: 'Director', role_category: 'associate_professor', status: 'current', is_director: true, profile_url: `${base}/engineering/ece/people/aosei`, source_url: 'https://osei-lab.invalid/people', observed_at: CHECKED },
+      { full_name: 'Priya Raman', role: 'Research assistant', role_category: 'research_assistant', status: 'current', is_director: false, profile_url: `${base}/engineering/ece/people/praman`, source_url: 'https://osei-lab.invalid/people', observed_at: CHECKED },
+      { full_name: 'Tomas Bergqvist', role: 'PhD student', role_category: 'graduate_student', status: 'current', is_director: false, source_url: 'https://osei-lab.invalid/people', observed_at: CHECKED },
+      { full_name: 'Hana Bright', role: 'MASc student', role_category: 'graduate_student', status: 'former', is_director: false, source_url: 'https://osei-lab.invalid/alumni', observed_at: CHECKED },
     ],
     publications: [{ title: 'Adaptive array processing for non-stationary harbour noise', doi: '10.5555/northvale.2025.114' }],
     unavailable_information: ['Current funding sources are not published.'],
     sources: [
-      { url: 'https://osei-lab.invalid/', category: 'lab_page', access_status: 'accessible', fetch_method: 'web_fetch', observed_at: '2026-09-10' },
-      { url: 'https://osei-lab.invalid/people', category: 'lab_page', access_status: 'accessible', fetch_method: 'web_fetch', observed_at: '2026-09-10' },
+      { url: 'https://osei-lab.invalid/', category: 'lab_page', access_status: 'accessible', fetch_method: 'web_fetch', observed_at: CHECKED },
+      { url: 'https://osei-lab.invalid/people', category: 'lab_page', access_status: 'accessible', fetch_method: 'web_fetch', observed_at: CHECKED },
     ],
     summary: 'Four members recorded, one explicitly identified as a former member.',
   };
